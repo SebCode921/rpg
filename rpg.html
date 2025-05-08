@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syncron Protocol</title>
+  <style>
+    body {
+      background-color: #0a0e1c;
+      color: #d9e1ff;
+      font-family: 'Eurostile', 'Arial', sans-serif;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .title-screen {
+      text-align: center;
+      animation: fadeIn 2s;
+    }
+    .title-screen h1 {
+      font-size: 48px;
+      text-shadow: 0 0 10px #4a6bff;
+      margin-bottom: 20px;
+    }
+    .dialogue-box {
+      background-color: #1a2338;
+      border: 2px solid #4a6bff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 700px;
+      width: 90%;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      box-shadow: 0 0 10px rgba(74, 107, 255, 0.5);
+    }
+    .portrait {
+      width: 100px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    .dialogue-text {
+      flex-grow: 1;
+    }
+    video {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    button {
+      background-color: #4a6bff;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Eurostile', 'Arial', sans-serif;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #6b8cff;
+    }
+    input[type="text"], input[type="file"] {
+      background-color: #2a3355;
+      border: 1px solid #4a6bff;
+      color: #d9e1ff;
+      padding: 8px;
+      margin: 10px 0;
+      border-radius: 5px;
+      font-family: 'Eurostile', 'Arial', sans-serif;
+    }
+    .tutorial-box, .combat-box {
+      background-color: #1a2338;
+      border: 2px solid #4a6bff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 700px;
+      width: 90%;
+      text-align: center;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 40px);
+      gap: 5px;
+      margin: 20px auto;
+      justify-content: center;
+    }
+    .cell {
+      width: 40px;
+      height: 40px;
+      background-color: #2a3355;
+      border: 1px solid #4a6bff;
+    }
+    .player {
+      background-color: #6b8cff;
+    }
+    .node {
+      background-color: #ff4a6b;
+    }
+    .aligned {
+      background-color: #4aff6b;
+    }
+    .battlefield {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+    .character, .enemy {
+      width: 100px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+    }
+    .attack {
+      animation: attackAnim 0.3s;
+    }
+    .enemy-hit {
+      animation: hitAnim 0.3s;
+    }
+    @keyframes attackAnim {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(20px); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes hitAnim {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+
+  <script>
+    const game = document.getElementById('game');
+    let characterNames = { player: '', mika: '', joren: '' };
+    let characterImages = { player: '', mika: '', joren: '' };
+    let webcamStream = null;
+    let dialogueIndex = 0;
+    let syncStress = 0;
+    let tutorialState = {
+      position: { x: 2, y: 2 },
+      nodes: [
+        { x: 0, y: 0, aligned: false },
+        { x: 4, y: 2, aligned: false },
+        { x: 2, y: 4, aligned: false }
+      ],
+      alignedCount: 0
+    };
+
+    const dialogues = [
+      { speaker: 'System', text: 'Year 20XX. Neon City, humanity\'s last fortress, trembles under the shadow of the Specters.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'These biomechanical horrors, born from unknown dimensions, erode our reality.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'The Syncron Project: humanity\'s desperate gambit. Mechs fused with neural and organic systems.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'Only pilots with rare neural compatibility can withstand the LCL immersion and AT Field calibration.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'You have been selected. Your neural profile indicates potential, but your psyche is untested.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'State your codename to begin neural link initialization.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'name', character: 'player' } },
+      { speaker: 'System', text: 'Codename [player] registered. Sync biometric data for Syncron Unit-01.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'photo', character: 'player' } },
+      { speaker: 'player', text: 'Why me? I’m not ready for this… I never asked to pilot anything.', image: '' },
+      { speaker: 'System', text: 'Pilot [player], you are the only viable candidate. Prepare for neural simulation training.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'tutorial' } },
+      { speaker: 'System', text: 'Simulation complete. LCL levels stable, but neural dissonance detected. Stress levels: [stress].', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'Initiating sync test. AT Field calibration in progress. Stand by, Pilot [player].', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'Sync rate at 82%. Neural patterns unstable. Warning: feedback loop forming.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'player', text: 'It’s too much… my head feels like it’s splitting apart!', image: '' },
+      { speaker: 'System', text: 'Emergency shutdown. Neural link severed. Pilot [player], medical team dispatched.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'System', text: 'Vital signs critical but stabilizing. Neural strain exceeds safe thresholds.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'Unknown', text: '[player], you’re awake. That blackout was severe—your mind nearly collapsed in there.', image: 'https://via.placeholder.com/100?text=Unknown' },
+      { speaker: 'System', text: 'Identify this tactician for NERV command registry.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'name', character: 'mika' } },
+      { speaker: 'mika', text: 'I’m [mika], tactical commander. We can’t lose you, [player]. The Specters are closing in.', image: '' },
+      { speaker: 'System', text: 'Biometrics required for [mika], tactical command.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'photo', character: 'mika' } },
+      { speaker: 'mika', text: 'Your sync test data shows anomalies. Something’s interfering with Unit-01’s core.', image: '' },
+      { speaker: 'System', text: 'Analysis: External neural interference detected. Source unknown. Sync stress at [stress].', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'Unknown', text: 'Interference? That’s not just a glitch. Unit-01’s neural systems are reacting to something.', image: 'https://via.placeholder.com/100?text=Unknown' },
+      { speaker: 'System', text: 'Identify this engineer for NERV systems registry.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'name', character: 'joren' } },
+      { speaker: 'joren', text: 'I’m [joren], systems engineer. [player], your sync rate is dangerously volatile.', image: '' },
+      { speaker: 'System', text: 'Biometrics required for [joren], systems engineering.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'photo', character: 'joren' } },
+      { speaker: 'joren', text: 'I’ve recalibrated the neural interface, but deploying you now is a gamble.', image: '' },
+      { speaker: 'player', text: '[stressDialog]', image: '' },
+      { speaker: 'mika', text: 'No time to hesitate, [player]. A Specter is breaching Neon City’s outer wall.', image: '' },
+      { speaker: 'System', text: 'Combat protocols engaged. Pilot [player], deploy Syncron Unit-01 against Specter.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'beginCombat' } }
+    ];
+
+    // Show title screen
+    function showTitleScreen() {
+      game.innerHTML = `
+        <div class="title-screen">
+          <h1>Syncron Protocol</h1>
+          <button onclick="showDialogue()">Start</button>
+        </div>
+      `;
+    }
+
+    // Show dialogue or trigger action
+    function showDialogue() {
+      if (dialogueIndex < dialogues.length) {
+        const { speaker, text, image, action } = dialogues[dialogueIndex];
+        if (action) {
+          if (action.type === 'name') askName(action.character);
+          else if (action.type === 'photo') askPortrait(action.character);
+          else if (action.type === 'tutorial') startTutorial();
+          else if (action.type === 'beginCombat') beginCombat();
+        } else {
+          let displaySpeaker = speaker === 'player' ? characterNames.player :
+                              speaker === 'mika' ? characterNames.mika :
+                              speaker === 'joren' ? characterNames.joren : speaker;
+          let stressDialog = syncStress > 50 ? 'I can’t handle this… Why does it always have to be me?' : 'I’ll try… but I’m not sure I can do this.';
+          let displayText = text.replace('[player]', characterNames.player)
+                                .replace('[mika]', characterNames.mika)
+                                .replace('[joren]', characterNames.joren)
+                                .replace('[stress]', syncStress)
+                                .replace('[stressDialog]', stressDialog);
+          let portraitImage = speaker === 'player' ? characterImages.player :
+                              speaker === 'mika' ? characterImages.mika :
+                              speaker === 'joren' ? characterImages.joren : image;
+          game.innerHTML = `
+            <div class="dialogue-box">
+              <div class="portrait" style="background-image: url('${portraitImage}')"></div>
+              <div class="dialogue-text">
+                <p><strong>${displaySpeaker}:</strong> ${displayText}</p>
+                <button onclick="dialogueIndex++; showDialogue()">Continue</button>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        beginCombat();
+      }
+    }
+
+    // Ask for character name
+    function askName(character) {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+          <div class="dialogue-text">
+            <p><strong>System:</strong> Identify ${character === 'player' ? 'your codename' : character === 'mika' ? 'this tactician' : 'this engineer'} for NERV registry.</p>
+            <input type="text" id="${character}Name" placeholder="Codename..." />
+            <button onclick="setName('${character}')">Confirm</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Set character name
+    function setName(character) {
+      const inputValue = document.getElementById(`${character}Name`).value.trim();
+      if (inputValue) {
+        characterNames[character] = inputValue;
+        if (character === 'player') {
+          dialogues[7].image = characterImages.player;
+          dialogues[12].image = characterImages.player;
+          dialogues[26].image = characterImages.player;
+        } else if (character === 'mika') {
+          dialogues[18].image = characterImages.mika;
+          dialogues[20].image = characterImages.mika;
+          dialogues[27].image = characterImages.mika;
+        } else if (character === 'joren') {
+          dialogues[24].image = characterImages.joren;
+          dialogues[25].image = characterImages.joren;
+        }
+        dialogueIndex++;
+        showDialogue();
+      } else {
+        alert('Please enter a codename.');
+      }
+    }
+
+    // Ask for character portrait
+    function askPortrait(character) {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+          <div class="dialogue-text">
+            <p><strong>System:</strong> ${characterNames[character]}, sync biometric data for NERV systems.</p>
+            <div id="webcam-container">
+              <video id="webcam" autoplay playsinline></video>
+            </div>
+            <button onclick="startWebcam('${character}')">Start Webcam</button>
+            <input type="file" id="imageUpload" accept="image/*" onchange="uploadImage('${character}')" />
+          </div>
+        </div>
+      `;
+    }
+
+    // Start webcam
+    function startWebcam(character) {
+      const video = document.getElementById('webcam');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Webcam not supported. Please upload an image instead.');
+        return;
+      }
+
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: 'user' } })
+        .then((stream) => {
+          webcamStream = stream;
+          video.srcObject = stream;
+          video.onloadedmetadata = () => {
+            video.play();
+            game.innerHTML = `
+              <div class="dialogue-box">
+                <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+                <div class="dialogue-text">
+                  <p><strong>System:</strong> Align with the camera. Select "Capture Biometrics" when ready.</p>
+                  <div id="webcam-container">
+                    <video id="webcam" autoplay playsinline></video>
+                  </div>
+                  <button onclick="takePhoto('${character}')">Capture Biometrics</button>
+                  <button onclick="stopWebcam()">Cancel</button>
+                </div>
+              </div>
+            `;
+            const newVideo = document.getElementById('webcam');
+            newVideo.srcObject = stream;
+            newVideo.play();
+          };
+        })
+        .catch((err) => {
+          console.error('Webcam error:', err);
+          alert('Error accessing webcam: ' + err.message + '. Ensure camera permissions are granted and use HTTPS. Alternatively, upload an image.');
+        });
+    }
+
+    // Stop webcam
+    function stopWebcam() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      askPortrait(dialogues[dialogueIndex].action.character);
+    }
+
+    // Take photo
+    function takePhoto(character) {
+      const video = document.getElementById('webcam');
+      if (!video.srcObject) {
+        alert('Webcam is not active. Please start the webcam first.');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Crop to 100x100
+      const size = Math.min(canvas.width, canvas.height);
+      const offsetX = (canvas.width - size) / 2;
+      const offsetY = (canvas.height - size) / 2;
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = 100;
+      croppedCanvas.height = 100;
+      const croppedContext = croppedCanvas.getContext('2d');
+      croppedContext.drawImage(canvas, offsetX, offsetY, size, size, 0, 0, 100, 100);
+
+      const imageData = croppedCanvas.toDataURL('image/png');
+      characterImages[character] = imageData;
+      if (character === 'player') {
+        dialogues[7].image = imageData;
+        dialogues[12].image = imageData;
+        dialogues[26].image = imageData;
+      } else if (character === 'mika') {
+        dialogues[18].image = imageData;
+        dialogues[20].image = imageData;
+        dialogues[27].image = imageData;
+      } else if (character === 'joren') {
+        dialogues[24].image = imageData;
+        dialogues[25].image = imageData;
+      }
+      stopWebcam();
+      confirmPortrait(character);
+    }
+
+    // Upload image
+    function uploadImage(character) {
+      const fileInput = document.getElementById('imageUpload');
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Please select an image.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 100;
+          canvas.height = 100;
+          const context = canvas.getContext('2d');
+          const size = Math.min(img.width, img.height);
+          const offsetX = (img.width - size) / 2;
+          const offsetY = (img.height - size) / 2;
+          context.drawImage(img, offsetX, offsetY, size, size, 0, 0, 100, 100);
+          const imageData = canvas.toDataURL('image/png');
+          characterImages[character] = imageData;
+          if (character === 'player') {
+            dialogues[7].image = imageData;
+            dialogues[12].image = imageData;
+            dialogues[26].image = imageData;
+          } else if (character === 'mika') {
+            dialogues[18].image = imageData;
+            dialogues[20].image = imageData;
+            dialogues[27].image = imageData;
+          } else if (character === 'joren') {
+            dialogues[24].image = imageData;
+            dialogues[25].image = imageData;
+          }
+          confirmPortrait(character);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Confirm portrait
+    function confirmPortrait(character) {
+      const name = characterNames[character];
+      const image = characterImages[character];
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('${image}')"></div>
+          <div class="dialogue-text">
+            <p><strong>System:</strong> Biometrics confirmed for ${name}. ${character === 'joren' ? 'NERV team synchronized.' : 'Proceed to next operative.'}</p>
+            <button onclick="dialogueIndex++; showDialogue()">${character === 'joren' ? 'Proceed' : 'Continue'}</button>
+            <button onclick="askPortrait('${character}')">Recapture Biometrics</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Start gameplay tutorial
+    function startTutorial() {
+      game.innerHTML = `
+        <div class="tutorial-box">
+          <p><strong>System:</strong> Neural simulation active. Pilot ${characterNames.player}, use WASD to move Unit-01 and align 3 sync nodes (red). Stress: ${syncStress}</p>
+          <div class="grid" id="grid"></div>
+          <p id="tutorial-message"></p>
+        </div>
+      `;
+      renderGrid();
+      document.addEventListener('keydown', handleTutorialInput);
+    }
+
+    // Render tutorial grid
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 5; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          if (x === tutorialState.position.x && y === tutorialState.position.y) {
+            cell.className += ' player';
+          } else {
+            const node = tutorialState.nodes.find(n => n.x === x && n.y === y);
+            if (node) {
+              cell.className += node.aligned ? ' aligned' : ' node';
+            }
+          }
+          grid.appendChild(cell);
+        }
+      }
+      const message = document.getElementById('tutorial-message');
+      message.textContent = `Nodes aligned: ${tutorialState.alignedCount}/3`;
+    }
+
+    // Handle tutorial input
+    function handleTutorialInput(event) {
+      const { x, y } = tutorialState.position;
+      let newX = x;
+      let newY = y;
+      if (event.key === 'w' && y > 0) newY--;
+      if (event.key === 's' && y < 4) newY++;
+      if (event.key === 'a' && x > 0) newX--;
+      if (event.key === 'd' && x < 4) newX++;
+      if (newX !== x || newY !== y) {
+        tutorialState.position = { x: newX, y: newY };
+        const node = tutorialState.nodes.find(n => n.x === newX && n.y === newY && !n.aligned);
+        if (node) {
+          node.aligned = true;
+          tutorialState.alignedCount++;
+          syncStress += 10;
+          if (tutorialState.alignedCount === 3) {
+            document.removeEventListener('keydown', handleTutorialInput);
+            dialogueIndex++;
+            showDialogue();
+            return;
+          }
+        }
+        renderGrid();
+      }
+    }
+
+    // Begin combat
+    function beginCombat() {
+      game.innerHTML = `
+        <div class="combat-box">
+          <p><strong>System:</strong> Specter detected, ${characterNames.player}! ${characterNames.mika} and ${characterNames.joren} monitoring. Sync Stress: ${syncStress}. Select action.</p>
+          <p><strong>Specter HP:</strong> <span id="specter-hp">15</span></p>
+          <div class="battlefield">
+            <div class="character" style="background-image: url('${characterImages.player}')"></div>
+            <div class="enemy" style="background-image: url('https://via.placeholder.com/100?text=Specter')"></div>
+          </div>
+          <div>
+            <button onclick="attackSpecter('pulse')">Pulse Strike (5 DMG)</button>
+            <button onclick="attackSpecter('beam')">Neon Beam (3 DMG, fast)</button>
+            <button onclick="attackSpecter('barrier')">AT Field (Block 2 DMG)</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Combat logic
+    function attackSpecter(type) {
+      const hpSpan = document.getElementById('specter-hp');
+      const character = document.querySelector('.character');
+      const enemy = document.querySelector('.enemy');
+      let damage = 0;
+
+      if (type === 'pulse') { damage = 5; syncStress += 5; }
+      if (type === 'beam') { damage = 3; syncStress += 5; }
+      if (type === 'barrier') {
+        syncStress += 2;
+        game.innerHTML += `<p><strong>System:</strong> AT Field deployed. Incoming damage mitigated. Stress: ${syncStress}</p>`;
+        return;
+      }
+
+      if (damage > 0) {
+        character.classList.add('attack');
+        enemy.classList.add('enemy-hit');
+
+        setTimeout(() => {
+          character.classList.remove('attack');
+          enemy.classList.remove('enemy-hit');
+
+          let currentHP = parseInt(hpSpan.textContent);
+          let newHP = Math.max(currentHP - damage, 0);
+          hpSpan.textContent = newHP;
+
+          if (newHP <= 0) {
+            game.innerHTML = `
+              <div class="dialogue-box">
+                <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+                <div class="dialogue-text">
+                  <p><strong>System:</strong> Specter neutralized. Sync rate stable. Pilot ${characterNames.player}, mission complete.</p>
+                  <button onclick="endDemo()">Continue</button>
+                </div>
+              </div>
+            `;
+          }
+        }, 600);
+      }
+    }
+
+    // End demo
+    function endDemo() {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('${characterImages.mika}')"></div>
+          <div class="dialogue-text">
+            <p><strong>${characterNames.mika}:</strong> You did it, ${characterNames.player}. Despite everything, you pulled through.</p>
+            <button onclick="alert('End of demo. Thank you for playing!')">Close</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Start the game
+    showTitleScreen();
+  </script>
+</body>
+</html>
