@@ -11,12 +11,34 @@
       font-family: 'Eurostile', 'Arial', sans-serif;
       padding: 20px;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
       overflow: hidden;
+    }
+    #game {
+      flex-grow: 1;
+      max-width: calc(100% - 200px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #ui-panel {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      width: 150px;
+      background-color: #1a2338;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 0 10px rgba(74, 107, 255, 0.5);
     }
     .title-screen {
       text-align: center;
@@ -64,12 +86,13 @@
       background-color: #4a6bff;
       border: none;
       color: #fff;
-      padding: 10px 20px;
+      padding: 8px 16px;
       margin: 5px;
       border-radius: 5px;
       cursor: pointer;
       font-family: 'Eurostile', 'Arial', sans-serif;
       transition: background-color 0.2s;
+      font-size: 14px;
     }
     button:hover {
       background-color: #6b8cff;
@@ -99,6 +122,85 @@
       background-position: center;
       background-repeat: no-repeat;
       opacity: 0.9;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .status {
+      margin-bottom: 10px;
+    }
+    .enemy-container {
+      align-self: center;
+      margin: 10px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .party-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+    .character-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 120px;
+    }
+    .character {
+      width: 80px;
+      height: 80px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+    }
+    .enemy {
+      width: 100px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+      background-repeat: no-repeat;
+    }
+    .character-name {
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    .character-stats {
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+    .action-buttons {
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+    }
+    .action-buttons.active {
+      display: flex;
+    }
+    .combat-log {
+      background-color: rgba(26, 35, 56, 0.8);
+      padding: 10px;
+      max-height: 100px;
+      overflow-y: auto;
+      border-radius: 5px;
+    }
+    .health-bar {
+      width: 100px;
+      height: 10px;
+      background-color: #2a3355;
+      border: 1px solid #4a6bff;
+      border-radius: 5px;
+      margin: 5px 0;
+    }
+    .health-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s, background-color 0.3s;
     }
     .grid {
       display: grid;
@@ -122,35 +224,11 @@
     .aligned {
       background-color: #4aff6b;
     }
-    .battlefield {
-      display: flex;
-      justify-content: space-between;
-      margin: 20px 0;
-    }
-    .character, .enemy {
-      width: 100px;
-      height: 100px;
-      background-size: cover;
-      background-position: center;
-      border: 2px solid #4a6bff;
-      border-radius: 8px;
-    }
-    .combat-menu {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-    }
-    .combat-log {
-      background-color: rgba(26, 35, 56, 0.8);
-      padding: 10px;
-      margin-top: 10px;
-      max-height: 100px;
-      overflow-y: auto;
-      border-radius: 5px;
-    }
     .attack {
       animation: attackAnim 0.3s;
+    }
+    .shake {
+      animation: shake 0.3s;
     }
     .enemy-hit {
       animation: hitAnim 0.3s;
@@ -159,6 +237,11 @@
       0% { transform: translateX(0); }
       50% { transform: translateX(20px); }
       100% { transform: translateX(0); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: rotate(0); }
+      25% { transform: rotate(2deg); }
+      75% { transform: rotate(-2deg); }
     }
     @keyframes hitAnim {
       0% { filter: brightness(1); }
@@ -169,10 +252,49 @@
       0% { opacity: 0; }
       100% { opacity: 1; }
     }
+    @media (max-width: 600px) {
+      body {
+        flex-direction: column;
+      }
+      #game {
+        max-width: 100%;
+      }
+      #ui-panel {
+        position: relative;
+        right: auto;
+        top: auto;
+        width: 90%;
+        margin-top: 10px;
+        flex-direction: row;
+        justify-content: center;
+      }
+      .party-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .character-box {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+      .combat-box {
+        padding: 10px;
+      }
+      .enemy-container {
+        margin: 5px auto;
+      }
+      .health-bar {
+        width: 80px;
+      }
+    }
   </style>
 </head>
 <body>
   <div id="game"></div>
+  <div id="ui-panel">
+    <button onclick="saveGame()">Save Game</button>
+    <button onclick="resetGame()">Reset Game</button>
+    <button onclick="restartGame()">Restart Game</button>
+  </div>
   <audio id="bgm" loop>
     <source src="./audio/bgm.mp3" type="audio/mpeg">
   </audio>
@@ -199,6 +321,7 @@
     const game = document.getElementById('game');
     let characterNames = { player: '', mika: '', joren: '' };
     let characterImages = { player: '', mika: '', joren: '' };
+    let enemyImages = { specter: '', drone: '' };
     let webcamStream = null;
     let dialogueIndex = 0;
     let syncStress = 0;
@@ -213,9 +336,13 @@
     };
     let combatState = {
       playerHP: 20,
-      specterHP: 15,
+      mikaHP: 15,
+      jorenHP: 15,
+      bossHP: 15,
       playerTurn: true,
-      specterCharge: false
+      bossCharge: false,
+      activeCharacter: 'player',
+      bossType: 'specter'
     };
     const bgm = document.getElementById('bgm');
     const battleBgm = document.getElementById('battle-bgm');
@@ -253,10 +380,181 @@
       { speaker: 'System', text: 'Biometrics required for [joren], systems engineering.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'photo', character: 'joren' } },
       { speaker: 'joren', text: 'I’ve recalibrated the neural interface, but deploying you now is a gamble.', image: '' },
       { speaker: 'player', text: '[stressDialog]', image: '' },
-      { speaker: 'mika', text: 'No time to hesitate, [player]. A Specter is breaching Neon City’s outer wall.', image: '' },
-      { speaker: 'System', text: 'Combat protocols engaged. Pilot [player], deploy Syncron Unit-01 against Specter.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'beginCombat' } },
-      { speaker: 'System', text: 'Specter neutralized. Sync rate stable. Pilot [player], mission complete.', image: 'https://via.placeholder.com/100?text=NERV' }
+      { speaker: 'mika', text: 'No time to hesitate, [player]. A Specter is breaching Neon City’s outer wall. We’re deploying as a team.', image: '' },
+      { speaker: 'System', text: 'Upload biometrics for Specter to initialize combat simulation.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'enemyPhoto', boss: 'specter' } },
+      { speaker: 'System', text: 'Specter biometrics registered. Combat protocols engaged.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'beginCombat', boss: 'specter' } },
+      { speaker: 'System', text: 'Specter neutralized. Sync rate stable. Team, mission complete.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'mika', text: '[player], you held it together out there. Our coordination is improving.', image: '' },
+      { speaker: 'joren', text: 'Unit-01’s neural core is still showing anomalies. I’ll keep monitoring in the field.', image: '' },
+      { speaker: 'player', text: '[partyDialog]', image: '' },
+      { speaker: 'System', text: 'Warning: Specter Drone detected in Neon City’s lower sector. Neural signatures indicate low threat level.', image: 'https://via.placeholder.com/100?text=NERV' },
+      { speaker: 'mika', text: 'Let’s move, team. [player], we’ll follow your lead.', image: '' },
+      { speaker: 'joren', text: 'I’ve got a neural override ready. If that Drone’s systems are as basic as they seem, I can disrupt it.', image: '' },
+      { speaker: 'System', text: 'Upload biometrics for Specter Drone to initialize combat simulation.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'enemyPhoto', boss: 'drone' } },
+      { speaker: 'System', text: 'Specter Drone biometrics registered. Syncron Units 01, 02, and 03 deployed.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'beginCombat', boss: 'drone' } },
+      { speaker: 'System', text: 'Specter Drone neutralized. Team sync rate stable. Mission complete.', image: 'https://via.placeholder.com/100?text=NERV' }
     ];
+
+    // Stop all audio
+    function stopAllAudio() {
+      [bgm, battleBgm, clickSound, pulseStrikeSound, neonBeamSound, atFieldSound, enemyAttackSound].forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+
+    // Save game state to LocalStorage
+    function saveGame() {
+      try {
+        const gameState = {
+          dialogueIndex,
+          characterNames,
+          characterImages,
+          enemyImages,
+          syncStress,
+          tutorialState,
+          combatState
+        };
+        const stateString = JSON.stringify(gameState);
+        if (stateString.length > 5 * 1024 * 1024) {
+          alert('Save data too large due to images. Please use smaller images or clear save.');
+          return;
+        }
+        localStorage.setItem('syncronProtocolSave', stateString);
+        alert('Game saved successfully!');
+      } catch (err) {
+        console.warn('Save failed:', err);
+        if (err.name === 'QuotaExceededError') {
+          if (confirm('Storage is full. Clear save data to continue?')) {
+            resetGame();
+            saveGame();
+          } else {
+            alert('Game not saved due to storage limit.');
+          }
+        } else {
+          alert('Failed to save game: ' + err.message);
+        }
+      }
+      playClickSound();
+    }
+
+    // Load game state from LocalStorage
+    function loadGame() {
+      try {
+        const savedState = localStorage.getItem('syncronProtocolSave');
+        if (!savedState) {
+          alert('No saved game found.');
+          return false;
+        }
+        const gameState = JSON.parse(savedState);
+        if (
+          typeof gameState.dialogueIndex === 'number' &&
+          gameState.dialogueIndex >= 0 &&
+          gameState.dialogueIndex < dialogues.length &&
+          typeof gameState.characterNames === 'object' &&
+          typeof gameState.characterImages === 'object' &&
+          typeof gameState.enemyImages === 'object' &&
+          typeof gameState.syncStress === 'number' &&
+          typeof gameState.tutorialState === 'object' &&
+          typeof gameState.combatState === 'object'
+        ) {
+          dialogueIndex = gameState.dialogueIndex;
+          characterNames = gameState.characterNames;
+          characterImages = gameState.characterImages;
+          enemyImages = gameState.enemyImages || { specter: '', drone: '' };
+          // Reset invalid enemy images
+          enemyImages.specter = (enemyImages.specter && typeof enemyImages.specter === 'string') ? enemyImages.specter : '';
+          enemyImages.drone = (enemyImages.drone && typeof enemyImages.drone === 'string') ? enemyImages.drone : '';
+          syncStress = gameState.syncStress;
+          tutorialState = gameState.tutorialState;
+          combatState = {
+            playerHP: gameState.combatState.playerHP || 20,
+            mikaHP: gameState.combatState.mikaHP || 15,
+            jorenHP: gameState.combatState.jorenHP || 15,
+            bossHP: gameState.combatState.bossHP || 15,
+            playerTurn: gameState.combatState.playerTurn || true,
+            bossCharge: gameState.combatState.bossCharge || false,
+            activeCharacter: gameState.combatState.activeCharacter || 'player',
+            bossType: gameState.combatState.bossType || 'specter'
+          };
+          if (characterImages.player) {
+            dialogues[7].image = characterImages.player;
+            dialogues[12].image = characterImages.player;
+            dialogues[26].image = characterImages.player;
+            dialogues[33].image = characterImages.player;
+          }
+          if (characterImages.mika) {
+            dialogues[17].image = characterImages.mika;
+            dialogues[19].image = characterImages.mika;
+            dialogues[27].image = characterImages.mika;
+            dialogues[31].image = characterImages.mika;
+            dialogues[35].image = characterImages.mika;
+          }
+          if (characterImages.joren) {
+            dialogues[23].image = characterImages.joren;
+            dialogues[25].image = characterImages.joren;
+            dialogues[32].image = characterImages.joren;
+            dialogues[36].image = characterImages.joren;
+          }
+          stopAllAudio();
+          if (dialogueIndex === 30 || dialogueIndex === 38) {
+            battleBgm.play().catch(err => console.warn('Battle BGM play failed:', err));
+          } else {
+            bgm.play().catch(err => console.warn('BGM play failed:', err));
+          }
+          showDialogue();
+          return true;
+        } else {
+          alert('Invalid save data.');
+          return false;
+        }
+      } catch (err) {
+        console.warn('Load failed:', err);
+        alert('Failed to load game: ' + err.message);
+        return false;
+      }
+    }
+
+    // Reset save data
+    function resetGame() {
+      localStorage.removeItem('syncronProtocolSave');
+      alert('Save data cleared.');
+      playClickSound();
+      showTitleScreen();
+    }
+
+    // Restart game
+    function restartGame() {
+      stopAllAudio();
+      characterNames = { player: '', mika: '', joren: '' };
+      characterImages = { player: '', mika: '', joren: '' };
+      enemyImages = { specter: '', drone: '' };
+      webcamStream = null;
+      dialogueIndex = 0;
+      syncStress = 0;
+      tutorialState = {
+        position: { x: 2, y: 2 },
+        nodes: [
+          { x: 0, y: 0, aligned: false },
+          { x: 4, y: 2, aligned: false },
+          { x: 2, y: 4, aligned: false }
+        ],
+        alignedCount: 0
+      };
+      combatState = {
+        playerHP: 20,
+        mikaHP: 15,
+        jorenHP: 15,
+        bossHP: 15,
+        playerTurn: true,
+        bossCharge: false,
+        activeCharacter: 'player',
+        bossType: 'specter'
+      };
+      localStorage.removeItem('syncronProtocolSave');
+      playClickSound();
+      showTitleScreen();
+    }
 
     // Preload audio
     function preloadAudio() {
@@ -274,10 +572,13 @@
 
     // Show title screen
     function showTitleScreen() {
+      stopAllAudio();
+      const hasSave = !!localStorage.getItem('syncronProtocolSave');
       game.innerHTML = `
         <div class="title-screen">
           <h1>Syncron Protocol</h1>
           <button onclick="playClickSound(); showDialogue()">Start</button>
+          ${hasSave ? '<button onclick="playClickSound(); loadGame()">Continue</button>' : ''}
         </div>
       `;
       preloadAudio();
@@ -285,38 +586,46 @@
 
     // Show dialogue or trigger action
     function showDialogue() {
+      console.log(`Showing dialogue index: ${dialogueIndex}`);
       if (dialogueIndex === 0) {
+        stopAllAudio();
         bgm.play().catch(err => console.warn('BGM play failed:', err));
       }
       if (dialogueIndex < dialogues.length) {
-        const { speaker, text, image, action } = dialogues[dialogueIndex];
-        if (action) {
-          if (action.type === 'name') askName(action.character);
-          else if (action.type === 'photo') askPortrait(action.character);
-          else if (action.type === 'tutorial') startTutorial();
-          else if (action.type === 'beginCombat') beginCombat();
-        } else {
-          let displaySpeaker = speaker === 'player' ? characterNames.player :
-                              speaker === 'mika' ? characterNames.mika :
-                              speaker === 'joren' ? characterNames.joren : speaker;
-          let stressDialog = syncStress > 50 ? 'I can’t handle this… Why does it always have to be me?' : 'I’ll try… but I’m not sure I can do this.';
-          let displayText = text.replace('[player]', characterNames.player)
-                                .replace('[mika]', characterNames.mika)
-                                .replace('[joren]', characterNames.joren)
-                                .replace('[stress]', syncStress)
-                                .replace('[stressDialog]', stressDialog);
-          let portraitImage = speaker === 'player' ? characterImages.player :
-                              speaker === 'mika' ? characterImages.mika :
-                              speaker === 'joren' ? characterImages.joren : image;
-          game.innerHTML = `
-            <div class="dialogue-box">
-              <div class="portrait" style="background-image: url('${portraitImage}')"></div>
-              <div class="dialogue-text">
-                <p><strong>${displaySpeaker}:</strong> ${displayText}</p>
-                <button onclick="playClickSound(); dialogueIndex++; showDialogue()">Continue</button>
+        try {
+          const { speaker, text, image, action } = dialogues[dialogueIndex];
+          if (action) {
+            if (action.type === 'name') askName(action.character);
+            else if (action.type === 'photo') askPortrait(action.character);
+            else if (action.type === 'enemyPhoto') askEnemyPortrait(action.boss);
+            else if (action.type === 'tutorial') startTutorial();
+            else if (action.type === 'beginCombat') beginCombat(action.boss);
+          } else {
+            let displaySpeaker = speaker === 'player' ? characterNames.player :
+                                speaker === 'mika' ? characterNames.mika :
+                                speaker === 'joren' ? characterNames.joren : speaker;
+            let stressDialog = syncStress > 50 ? 'I can’t handle this… Why does it always have to be me?' : 'I’ll try… but I’m not sure I can do this.';
+            let partyDialog = syncStress > 50 ? 'You’re both risking your lives for me? I… I don’t deserve this.' : 'If you’re both in, I’ll do my best to keep up.';
+            let displayText = text.replace('[player]', characterNames.player)
+                                  .replace('[mika]', characterNames.mika)
+                                  .replace('[joren]', characterNames.joren)
+                                  .replace('[stress]', syncStress)
+                                  .replace('[stressDialog]', stressDialog)
+                                  .replace('[partyDialog]', partyDialog);
+            game.innerHTML = `
+              <div class="dialogue-box">
+                <div class="portrait" style="background-image: url('${image}')"></div>
+                <div class="dialogue-text">
+                  <p><strong>${displaySpeaker}:</strong> ${displayText}</p>
+                  <button onclick="playClickSound(); dialogueIndex++; showDialogue()">Continue</button>
+                </div>
               </div>
-            </div>
-          `;
+            `;
+          }
+        } catch (err) {
+          console.error('Error in showDialogue:', err);
+          alert('An error occurred while displaying dialogue. Please try restarting the game.');
+          restartGame();
         }
       } else {
         endDemo();
@@ -346,13 +655,18 @@
           dialogues[7].image = characterImages.player;
           dialogues[12].image = characterImages.player;
           dialogues[26].image = characterImages.player;
+          dialogues[33].image = characterImages.player;
         } else if (character === 'mika') {
-          dialogues[18].image = characterImages.mika;
-          dialogues[20].image = characterImages.mika;
+          dialogues[17].image = characterImages.mika;
+          dialogues[19].image = characterImages.mika;
           dialogues[27].image = characterImages.mika;
+          dialogues[31].image = characterImages.mika;
+          dialogues[35].image = characterImages.mika;
         } else if (character === 'joren') {
-          dialogues[24].image = characterImages.joren;
+          dialogues[23].image = characterImages.joren;
           dialogues[25].image = characterImages.joren;
+          dialogues[32].image = characterImages.joren;
+          dialogues[36].image = characterImages.joren;
         }
         dialogueIndex++;
         showDialogue();
@@ -371,15 +685,32 @@
             <div id="webcam-container">
               <video id="webcam" autoplay playsinline></video>
             </div>
-            <button onclick="playClickSound(); startWebcam('${character}')">Start Webcam</button>
-            <input type="file" id="imageUpload" accept="image/*" onchange="uploadImage('${character}')" />
+            <button onclick="playClickSound(); startWebcam('character', '${character}')">Start Webcam</button>
+            <input type="file" id="imageUpload" accept="image/png,image/jpeg" onchange="uploadImage('character', '${character}')" />
+          </div>
+        </div>
+      `;
+    }
+
+    // Ask for enemy portrait
+    function askEnemyPortrait(boss) {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+          <div class="dialogue-text">
+            <p><strong>System:</strong> Upload biometrics for ${boss === 'specter' ? 'Specter' : 'Specter Drone'} to initialize combat simulation.</p>
+            <div id="webcam-container">
+              <video id="webcam" autoplay playsinline></video>
+            </div>
+            <button onclick="playClickSound(); startWebcam('enemy', '${boss}')">Start Webcam</button>
+            <input type="file" id="imageUpload" accept="image/png,image/jpeg" onchange="uploadImage('enemy', '${boss}')" />
           </div>
         </div>
       `;
     }
 
     // Start webcam
-    function startWebcam(character) {
+    function startWebcam(target, identifier) {
       const video = document.getElementById('webcam');
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Webcam not supported. Please upload an image instead.');
@@ -401,7 +732,7 @@
                   <div id="webcam-container">
                     <video id="webcam" autoplay playsinline></video>
                   </div>
-                  <button onclick="playClickSound(); takePhoto('${character}')">Capture Biometrics</button>
+                  <button onclick="playClickSound(); takePhoto('${target}', '${identifier}')">Capture Biometrics</button>
                   <button onclick="playClickSound(); stopWebcam()">Cancel</button>
                 </div>
               </div>
@@ -423,11 +754,17 @@
         webcamStream.getTracks().forEach(track => track.stop());
         webcamStream = null;
       }
-      askPortrait(dialogues[dialogueIndex].action.character);
+      const action = dialogues[dialogueIndex].action;
+      if (action.type === 'enemyPhoto') {
+        askEnemyPortrait(action.boss);
+      } else {
+        askPortrait(action.character);
+      }
     }
 
     // Take photo
-    function takePhoto(character) {
+    function takePhoto(target, identifier) {
+      console.log(`Taking photo for ${target}: ${identifier}`);
       const video = document.getElementById('webcam');
       if (!video.srcObject) {
         alert('Webcam is not active. Please start the webcam first.');
@@ -439,73 +776,99 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/png');
+      console.log(`Captured image for ${identifier}: ${imageData.substring(0, 50)}...`);
 
-      // Crop to 100x100
-      const size = Math.min(canvas.width, canvas.height);
-      const offsetX = (canvas.width - size) / 2;
-      const offsetY = (canvas.height - size) / 2;
-      const croppedCanvas = document.createElement('canvas');
-      croppedCanvas.width = 100;
-      croppedCanvas.height = 100;
-      const croppedContext = croppedCanvas.getContext('2d');
-      croppedContext.drawImage(canvas, offsetX, offsetY, size, size, 0, 0, 100, 100);
-
-      const imageData = croppedCanvas.toDataURL('image/png');
-      characterImages[character] = imageData;
-      if (character === 'player') {
-        dialogues[7].image = imageData;
-        dialogues[12].image = imageData;
-        dialogues[26].image = imageData;
-      } else if (character === 'mika') {
-        dialogues[18].image = imageData;
-        dialogues[20].image = imageData;
-        dialogues[27].image = imageData;
-      } else if (character === 'joren') {
-        dialogues[24].image = imageData;
-        dialogues[25].image = imageData;
+      if (imageData && typeof imageData === 'string') {
+        if (target === 'enemy') {
+          enemyImages[identifier] = imageData;
+          console.log(`Set enemyImages[${identifier}] = ${imageData.substring(0, 50)}...`);
+          setEnemyImage(identifier);
+        } else {
+          characterImages[identifier] = imageData;
+          if (identifier === 'player') {
+            dialogues[7].image = imageData;
+            dialogues[12].image = imageData;
+            dialogues[26].image = imageData;
+            dialogues[33].image = imageData;
+          } else if (identifier === 'mika') {
+            dialogues[17].image = imageData;
+            dialogues[19].image = imageData;
+            dialogues[27].image = imageData;
+            dialogues[31].image = imageData;
+            dialogues[35].image = imageData;
+          } else if (identifier === 'joren') {
+            dialogues[23].image = imageData;
+            dialogues[25].image = imageData;
+            dialogues[32].image = imageData;
+            dialogues[36].image = imageData;
+          }
+          stopWebcam();
+          confirmPortrait(identifier);
+        }
+      } else {
+        console.warn(`Invalid image data for ${identifier}`);
+        alert('Failed to capture valid image. Please try again.');
+        stopWebcam();
       }
-      stopWebcam();
-      confirmPortrait(character);
     }
 
     // Upload image
-    function uploadImage(character) {
+    function uploadImage(target, identifier) {
+      console.log(`Uploading image for ${target}: ${identifier}`);
       const fileInput = document.getElementById('imageUpload');
       const file = fileInput.files[0];
       if (!file) {
         alert('Please select an image.');
         return;
       }
+      if (!['image/png', 'image/jpeg'].includes(file.type)) {
+        alert('Please select a PNG or JPEG image.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size exceeds 5MB. Please select a smaller image.');
+        return;
+      }
 
       const reader = new FileReader();
       reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 100;
-          canvas.height = 100;
-          const context = canvas.getContext('2d');
-          const size = Math.min(img.width, img.height);
-          const offsetX = (img.width - size) / 2;
-          const offsetY = (img.height - size) / 2;
-          context.drawImage(img, offsetX, offsetY, size, size, 0, 0, 100, 100);
-          const imageData = canvas.toDataURL('image/png');
-          characterImages[character] = imageData;
-          if (character === 'player') {
-            dialogues[7].image = imageData;
-            dialogues[12].image = imageData;
-            dialogues[26].image = imageData;
-          } else if (character === 'mika') {
-            dialogues[18].image = imageData;
-            dialogues[20].image = imageData;
-            dialogues[27].image = imageData;
-          } else if (character === 'joren') {
-            dialogues[24].image = imageData;
-            dialogues[25].image = imageData;
+        const imageData = reader.result;
+        console.log(`Uploaded image for ${identifier}: ${imageData.substring(0, 50)}...`);
+        if (imageData && typeof imageData === 'string') {
+          if (target === 'enemy') {
+            enemyImages[identifier] = imageData;
+            console.log(`Set enemyImages[${identifier}] = ${imageData.substring(0, 50)}...`);
+            setEnemyImage(identifier);
+          } else {
+            characterImages[identifier] = imageData;
+            if (identifier === 'player') {
+              dialogues[7].image = imageData;
+              dialogues[12].image = imageData;
+              dialogues[26].image = imageData;
+              dialogues[33].image = imageData;
+            } else if (identifier === 'mika') {
+              dialogues[17].image = imageData;
+              dialogues[19].image = imageData;
+              dialogues[27].image = imageData;
+              dialogues[31].image = imageData;
+              dialogues[35].image = imageData;
+            } else if (identifier === 'joren') {
+              dialogues[23].image = imageData;
+              dialogues[25].image = imageData;
+              dialogues[32].image = imageData;
+              dialogues[36].image = imageData;
+            }
+            confirmPortrait(identifier);
           }
-          confirmPortrait(character);
-        };
-        img.src = reader.result;
+        } else {
+          console.warn(`Invalid uploaded image for ${identifier}`);
+          alert('Invalid image format. Please upload a PNG or JPEG image.');
+        }
+      };
+      reader.onerror = () => {
+        console.warn(`Error reading file for ${identifier}`);
+        alert('Failed to read image file. Please try again.');
       };
       reader.readAsDataURL(file);
     }
@@ -521,6 +884,27 @@
             <p><strong>System:</strong> Biometrics confirmed for ${name}. ${character === 'joren' ? 'NERV team synchronized.' : 'Proceed to next operative.'}</p>
             <button onclick="playClickSound(); dialogueIndex++; showDialogue()">${character === 'joren' ? 'Proceed' : 'Continue'}</button>
             <button onclick="playClickSound(); askPortrait('${character}')">Recapture Biometrics</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Set enemy image
+    function setEnemyImage(boss) {
+      console.log(`Setting enemy image for ${boss}, enemyImages[${boss}] = ${enemyImages[boss] ? enemyImages[boss].substring(0, 50) + '...' : 'empty'}`);
+      stopWebcam();
+      const image = enemyImages[boss] || 'https://via.placeholder.com/100?text=' + (boss === 'specter' ? 'Specter' : 'Specter+Drone');
+      if (!enemyImages[boss]) {
+        console.warn(`No image set for ${boss}, using placeholder`);
+        alert('No valid image detected. Using placeholder image. You can retry or proceed.');
+      }
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('${image}')"></div>
+          <div class="dialogue-text">
+            <p><strong>System:</strong> Biometrics confirmed for ${boss === 'specter' ? 'Specter' : 'Specter Drone'}. Proceed to combat simulation.</p>
+            <button onclick="playClickSound(); dialogueIndex++; showDialogue()">Proceed</button>
+            <button onclick="playClickSound(); askEnemyPortrait('${boss}')">Recapture Biometrics</button>
           </div>
         </div>
       `;
@@ -590,34 +974,109 @@
     }
 
     // Begin combat
-    function beginCombat() {
-      combatState = { playerHP: 20, specterHP: 15, playerTurn: true, specterCharge: false };
-      bgm.pause();
+    function beginCombat(bossType) {
+      combatState = {
+        playerHP: 20,
+        mikaHP: 15,
+        jorenHP: 15,
+        bossHP: bossType === 'specter' ? 15 : 20,
+        playerTurn: true,
+        bossCharge: false,
+        activeCharacter: 'player',
+        bossType: bossType
+      };
+      stopAllAudio();
       battleBgm.currentTime = 0;
       battleBgm.play().catch(err => console.warn('Battle BGM play failed:', err));
       renderCombat();
     }
 
     // Render combat
-    function renderCombat() {
+    function renderCombat(skillMenu = false) {
+      const maxBossHP = combatState.bossType === 'specter' ? 15 : 20;
+      const bossHPPercent = (combatState.bossHP / maxBossHP) * 100;
+      const bossHealthColor = bossHPPercent > 50 ? '#4aff6b' : bossHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
+      const playerHPPercent = (combatState.playerHP / 20) * 100;
+      const playerHealthColor = playerHPPercent > 50 ? '#4aff6b' : playerHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
+      const mikaHPPercent = (combatState.mikaHP / 15) * 100;
+      const mikaHealthColor = mikaHPPercent > 50 ? '#4aff6b' : mikaHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
+      const jorenHPPercent = (combatState.jorenHP / 15) * 100;
+      const jorenHealthColor = jorenHPPercent > 50 ? '#4aff6b' : jorenHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
       const status = `
-        <p><strong>Status:</strong> Pilot HP: ${combatState.playerHP} | Specter HP: ${combatState.specterHP} | Sync Stress: ${syncStress}</p>
-      `;
-      const menu = combatState.playerTurn ? `
-        <div class="combat-menu">
-          <button onclick="playClickSound(); selectCombatAction('attack')">Attack</button>
-          <button onclick="playClickSound(); selectCombatAction('skill')">Skill</button>
-          <button onclick="playClickSound(); selectCombatAction('defend')">Defend</button>
+        <div class="status">
+          <p><strong>Status:</strong> ${characterNames.player} HP: ${combatState.playerHP} | ${characterNames.mika} HP: ${combatState.mikaHP} | ${characterNames.joren} HP: ${combatState.jorenHP} | ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} HP: ${combatState.bossHP} | Sync Stress: ${syncStress}</p>
         </div>
-      ` : '';
+      `;
+      let enemyImage = enemyImages[combatState.bossType];
+      if (!enemyImage || typeof enemyImage !== 'string') {
+        console.warn(`Invalid enemy image for ${combatState.bossType}, using placeholder.`);
+        enemyImage = 'https://via.placeholder.com/100?text=' + (combatState.bossType === 'specter' ? 'Specter' : 'Specter+Drone');
+      } else {
+        console.log(`Using enemy image for ${combatState.bossType}: ${enemyImage.substring(0, 50)}...`);
+      }
+      const playerActions = skillMenu ? `
+        <div class="action-buttons active">
+          <button onclick="playClickSound(); performCombatAction('pulse')">Pulse Strike</button>
+          <button onclick="playClickSound(); performCombatAction('beam')">Neon Beam</button>
+          <button onclick="playClickSound(); renderCombat(false)">Back</button>
+        </div>
+      ` : `
+        <div class="action-buttons${combatState.activeCharacter === 'player' && combatState.playerTurn ? ' active' : ''}">
+          <button onclick="playClickSound(); performCombatAction('attack')">Attack</button>
+          <button onclick="playClickSound(); selectCombatAction('skill')">Skill</button>
+          <button onclick="playClickSound(); performCombatAction('defend')">Defend</button>
+        </div>
+      `;
+      const mikaActions = `
+        <div class="action-buttons${combatState.activeCharacter === 'mika' && combatState.playerTurn ? ' active' : ''}">
+          <button onclick="playClickSound(); performCombatAction('boost')">Boost AT Field</button>
+          <button onclick="playClickSound(); performCombatAction('tactical')">Tactical Strike</button>
+        </div>
+      `;
+      const jorenActions = `
+        <div class="action-buttons${combatState.activeCharacter === 'joren' && combatState.playerTurn ? ' active' : ''}">
+          <button onclick="playClickSound(); performCombatAction('hack')">Neural Hack</button>
+          <button onclick="playClickSound(); performCombatAction('repair')">Repair</button>
+        </div>
+      `;
       game.innerHTML = `
         <div class="combat-box">
           ${status}
-          <div class="battlefield">
-            <div class="character" style="background-image: url('${characterImages.player}')"></div>
-            <div class="enemy" style="background-image: url('https://via.placeholder.com/100?text=Specter')"></div>
+          <div class="enemy-container">
+            <div class="health-bar">
+              <div class="health-fill" style="width: ${bossHPPercent}%; background-color: ${bossHealthColor};"></div>
+            </div>
+            <div class="enemy" style="background-image: url('${enemyImage}')"></div>
           </div>
-          ${menu}
+          <div class="party-container">
+            <div class="character-box">
+              <div class="character" style="background-image: url('${characterImages.player}')"></div>
+              <div class="character-name">${characterNames.player}</div>
+              <div class="character-stats">HP: ${combatState.playerHP}</div>
+              <div class="health-bar">
+                <div class="health-fill" style="width: ${playerHPPercent}%; background-color: ${playerHealthColor};"></div>
+              </div>
+              ${playerActions}
+            </div>
+            <div class="character-box">
+              <div class="character" style="background-image: url('${characterImages.mika}')"></div>
+              <div class="character-name">${characterNames.mika}</div>
+              <div class="character-stats">HP: ${combatState.mikaHP}</div>
+              <div class="health-bar">
+                <div class="health-fill" style="width: ${mikaHPPercent}%; background-color: ${mikaHealthColor};"></div>
+              </div>
+              ${mikaActions}
+            </div>
+            <div class="character-box">
+              <div class="character" style="background-image: url('${characterImages.joren}')"></div>
+              <div class="character-name">${characterNames.joren}</div>
+              <div class="character-stats">HP: ${combatState.jorenHP}</div>
+              <div class="health-bar">
+                <div class="health-fill" style="width: ${jorenHPPercent}%; background-color: ${jorenHealthColor};"></div>
+              </div>
+              ${jorenActions}
+            </div>
+          </div>
           <div class="combat-log" id="combat-log"></div>
         </div>
       `;
@@ -626,22 +1085,8 @@
     // Select combat action
     function selectCombatAction(action) {
       if (!combatState.playerTurn) return;
-      combatState.playerTurn = false;
-      if (action === 'skill') {
-        game.innerHTML = `
-          <div class="combat-box">
-            <p><strong>Status:</strong> Pilot HP: ${combatState.playerHP} | Specter HP: ${combatState.specterHP} | Sync Stress: ${syncStress}</p>
-            <div class="battlefield">
-              <div class="character" style="background-image: url('${characterImages.player}')"></div>
-              <div class="enemy" style="background-image: url('https://via.placeholder.com/100?text=Specter')"></div>
-            </div>
-            <div class="combat-menu">
-              <button onclick="playClickSound(); performCombatAction('pulse')">Pulse Strike</button>
-              <button onclick="playClickSound(); performCombatAction('beam')">Neon Beam</button>
-            </div>
-            <div class="combat-log" id="combat-log"></div>
-          </div>
-        `;
+      if (action === 'skill' && combatState.activeCharacter === 'player') {
+        renderCombat(true);
       } else {
         performCombatAction(action);
       }
@@ -650,42 +1095,82 @@
     // Perform combat action
     function performCombatAction(action) {
       const log = document.getElementById('combat-log') || document.createElement('div');
-      const character = document.querySelector('.character');
+      const characters = document.querySelectorAll('.character');
+      const characterIndex = combatState.activeCharacter === 'player' ? 0 : combatState.activeCharacter === 'mika' ? 1 : 2;
+      const character = characters[characterIndex];
       const enemy = document.querySelector('.enemy');
       let message = '';
       let damage = 0;
+      let missChance = 0;
+      let defending = false;
+      let boosted = false;
 
-      if (action === 'attack') {
-        damage = 5;
-        syncStress += 5;
-        message = `Pilot ${characterNames.player} attacks! Specter takes ${damage} damage.`;
-        pulseStrikeSound.currentTime = 0;
-        pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
-      } else if (action === 'pulse') {
-        damage = 7;
-        syncStress += 7;
-        message = `Pulse Strike hits! Specter takes ${damage} damage.`;
-        pulseStrikeSound.currentTime = 0;
-        pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
-      } else if (action === 'beam') {
-        damage = 3;
-        syncStress += 7;
-        message = `Neon Beam strikes! Specter takes ${damage} damage.`;
-        neonBeamSound.currentTime = 0;
-        neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
-      } else if (action === 'defend') {
-        syncStress += 2;
-        message = `Pilot ${characterNames.player} deploys AT Field! Incoming damage reduced.`;
-        atFieldSound.currentTime = 0;
-        atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
+      if (combatState.activeCharacter === 'player') {
+        if (action === 'attack') {
+          damage = 5;
+          syncStress += 5;
+          message = `Pilot ${characterNames.player} attacks! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
+          pulseStrikeSound.currentTime = 0;
+          pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
+        } else if (action === 'pulse') {
+          damage = 7;
+          syncStress += 7;
+          message = `Pulse Strike hits! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
+          pulseStrikeSound.currentTime = 0;
+          pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
+        } else if (action === 'beam') {
+          damage = 3;
+          syncStress += 7;
+          message = `Neon Beam strikes! ${combatState.bossType === 'specter' ? 'Specter Drone' : 'Specter Drone'} takes ${damage} damage.`;
+          neonBeamSound.currentTime = 0;
+          neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
+        } else if (action === 'defend') {
+          syncStress += 2;
+          message = `Pilot ${characterNames.player} deploys AT Field! Incoming damage reduced.`;
+          atFieldSound.currentTime = 0;
+          atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
+          defending = true;
+        }
+      } else if (combatState.activeCharacter === 'mika') {
+        if (action === 'boost') {
+          syncStress += 3;
+          message = `${characterNames.mika} boosts AT Field! Party damage reduction increased.`;
+          atFieldSound.currentTime = 0;
+          atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
+          boosted = true;
+        } else if (action === 'tactical') {
+          damage = 4;
+          syncStress += 4;
+          message = `${characterNames.mika} lands a Tactical Strike! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
+          pulseStrikeSound.currentTime = 0;
+          pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
+        }
+      } else if (combatState.activeCharacter === 'joren') {
+        if (action === 'hack') {
+          damage = 3;
+          syncStress += 3;
+          missChance = 0.1;
+          message = `${characterNames.joren} uses Neural Hack! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage, miss chance increased.`;
+          neonBeamSound.currentTime = 0;
+          neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
+        } else if (action === 'repair') {
+          const target = combatState.playerHP < combatState.mikaHP ? (combatState.playerHP < combatState.jorenHP ? 'player' : 'joren') : (combatState.mikaHP < combatState.jorenHP ? 'mika' : 'joren');
+          if (target === 'player') combatState.playerHP = Math.min(combatState.playerHP + 5, 20);
+          else if (target === 'mika') combatState.mikaHP = Math.min(combatState.mikaHP + 5, 15);
+          else combatState.jorenHP = Math.min(combatState.jorenHP + 5, 15);
+          syncStress += 3;
+          message = `${characterNames.joren} repairs ${characterNames[target]}! 5 HP restored.`;
+          atFieldSound.currentTime = 0;
+          atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
+        }
       }
 
       if (damage > 0) {
-        combatState.specterHP = Math.max(combatState.specterHP - damage, 0);
-        character.classList.add('attack');
+        combatState.bossHP = Math.max(combatState.bossHP - damage, 0);
+        character.classList.add('attack', 'shake');
         enemy.classList.add('enemy-hit');
         setTimeout(() => {
-          character.classList.remove('attack');
+          character.classList.remove('attack', 'shake');
           enemy.classList.remove('enemy-hit');
         }, 300);
       }
@@ -693,54 +1178,81 @@
       log.innerHTML += `<p>${message}</p>`;
       log.scrollTop = log.scrollHeight;
 
-      if (combatState.specterHP <= 0) {
-        battleBgm.pause();
+      if (combatState.bossHP <= 0) {
+        stopAllAudio();
         bgm.play().catch(err => console.warn('BGM play failed:', err));
         dialogueIndex++;
         showDialogue();
         return;
       }
 
-      setTimeout(specterTurn, 1000);
+      combatState.defending = combatState.activeCharacter === 'player' && action === 'defend' ? true : combatState.defending;
+      combatState.boosted = combatState.activeCharacter === 'mika' && action === 'boost' ? true : combatState.boosted;
+
+      if (combatState.activeCharacter === 'player') {
+        combatState.activeCharacter = 'mika';
+        renderCombat(false);
+      } else if (combatState.activeCharacter === 'mika') {
+        combatState.activeCharacter = 'joren';
+        renderCombat(false);
+      } else {
+        combatState.activeCharacter = 'player';
+        combatState.playerTurn = false;
+        setTimeout(specterTurn, 1000);
+      }
     }
 
     // Specter turn
     function specterTurn() {
       const log = document.getElementById('combat-log');
-      const character = document.querySelector('.character');
+      const characters = document.querySelectorAll('.character');
       const enemy = document.querySelector('.enemy');
       let message = '';
-      let damage = combatState.specterCharge ? 5 : 3;
+      let damage = combatState.bossCharge ? (combatState.bossType === 'specter' ? 5 : 4) : (combatState.bossType === 'specter' ? 3 : 2);
+      let missChance = combatState.activeCharacter === 'joren' && Math.random() < 0.1 ? 0.1 : 0;
 
-      if (Math.random() < 0.3 && !combatState.specterCharge) {
-        combatState.specterCharge = true;
-        message = 'Specter is charging energy!';
+      if (Math.random() < 0.3 && !combatState.bossCharge) {
+        combatState.bossCharge = true;
+        message = `${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} is charging energy!`;
       } else {
-        if (combatState.specterCharge) combatState.specterCharge = false;
-        combatState.playerHP = Math.max(combatState.playerHP - damage, 0);
-        message = `Specter attacks! Pilot takes ${damage} damage.`;
-        enemy.classList.add('attack');
-        character.classList.add('enemy-hit');
-        setTimeout(() => {
-          enemy.classList.remove('attack');
-          character.classList.remove('enemy-hit');
-        }, 300);
-        enemyAttackSound.currentTime = 0;
-        enemyAttackSound.play().catch(err => console.warn('Enemy attack sound failed:', err));
+        if (combatState.bossCharge) combatState.bossCharge = false;
+        if (Math.random() < missChance) {
+          message = `${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} attack misses!`;
+        } else {
+          const targetIndex = Math.floor(Math.random() * 3);
+          const target = targetIndex === 0 ? 'player' : targetIndex === 1 ? 'mika' : 'joren';
+          const finalDamage = (combatState.defending || combatState.boosted) ? Math.floor(damage / 2) : damage;
+          if (target === 'player') {
+            combatState.playerHP = Math.max(combatState.playerHP - finalDamage, 0);
+          } else if (target === 'mika') {
+            combatState.mikaHP = Math.max(combatState.mikaHP - finalDamage, 0);
+          } else {
+            combatState.jorenHP = Math.max(combatState.jorenHP - finalDamage, 0);
+          }
+          message = `${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} attacks ${characterNames[target]}! ${finalDamage} damage taken.`;
+          enemy.classList.add('attack');
+          characters[targetIndex].classList.add('enemy-hit');
+          setTimeout(() => {
+            enemy.classList.remove('attack');
+            characters[targetIndex].classList.remove('enemy-hit');
+          }, 300);
+          enemyAttackSound.currentTime = 0;
+          enemyAttackSound.play().catch(err => console.warn('Enemy attack sound failed:', err));
+        }
       }
 
       log.innerHTML += `<p>${message}</p>`;
       log.scrollTop = log.scrollHeight;
 
-      if (combatState.playerHP <= 0) {
-        battleBgm.pause();
+      if (combatState.playerHP <= 0 || combatState.mikaHP <= 0 || combatState.jorenHP <= 0) {
+        stopAllAudio();
         bgm.play().catch(err => console.warn('BGM play failed:', err));
         game.innerHTML = `
           <div class="dialogue-box">
             <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
             <div class="dialogue-text">
-              <p><strong>System:</strong> Pilot ${characterNames.player} incapacitated. Mission failed.</p>
-              <button onclick="playClickSound(); showTitleScreen()">Restart</button>
+              <p><strong>System:</strong> Mission failed. Team incapacitated. Restarting simulation.</p>
+              <button onclick="playClickSound(); restartGame()">Restart</button>
             </div>
           </div>
         `;
@@ -748,7 +1260,10 @@
       }
 
       combatState.playerTurn = true;
-      renderCombat();
+      combatState.activeCharacter = 'player';
+      combatState.defending = false;
+      combatState.boosted = false;
+      renderCombat(false);
     }
 
     // End demo
