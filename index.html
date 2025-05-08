@@ -91,6 +91,14 @@
       max-width: 700px;
       width: 90%;
       text-align: center;
+      position: relative;
+    }
+    .combat-box {
+      background-image: url('https://via.placeholder.com/700x500?text=Neon+City+Ruins');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.9;
     }
     .grid {
       display: grid;
@@ -127,6 +135,20 @@
       border: 2px solid #4a6bff;
       border-radius: 8px;
     }
+    .combat-menu {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .combat-log {
+      background-color: rgba(26, 35, 56, 0.8);
+      padding: 10px;
+      margin-top: 10px;
+      max-height: 100px;
+      overflow-y: auto;
+      border-radius: 5px;
+    }
     .attack {
       animation: attackAnim 0.3s;
     }
@@ -151,6 +173,27 @@
 </head>
 <body>
   <div id="game"></div>
+  <audio id="bgm" loop>
+    <source src="./audio/bgm.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="battle-bgm" loop>
+    <source src="./audio/battle-bgm.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="click">
+    <source src="./audio/click.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="pulse-strike">
+    <source src="./audio/pulse-strike.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="neon-beam">
+    <source src="./audio/neon-beam.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="at-field">
+    <source src="./audio/at-field.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="enemy-attack">
+    <source src="./audio/enemy-attack.mp3" type="audio/mpeg">
+  </audio>
 
   <script>
     const game = document.getElementById('game');
@@ -168,6 +211,19 @@
       ],
       alignedCount: 0
     };
+    let combatState = {
+      playerHP: 20,
+      specterHP: 15,
+      playerTurn: true,
+      specterCharge: false
+    };
+    const bgm = document.getElementById('bgm');
+    const battleBgm = document.getElementById('battle-bgm');
+    const clickSound = document.getElementById('click');
+    const pulseStrikeSound = document.getElementById('pulse-strike');
+    const neonBeamSound = document.getElementById('neon-beam');
+    const atFieldSound = document.getElementById('at-field');
+    const enemyAttackSound = document.getElementById('enemy-attack');
 
     const dialogues = [
       { speaker: 'System', text: 'Year 20XX. Neon City, humanity\'s last fortress, trembles under the shadow of the Specters.', image: 'https://via.placeholder.com/100?text=NERV' },
@@ -198,21 +254,40 @@
       { speaker: 'joren', text: 'I’ve recalibrated the neural interface, but deploying you now is a gamble.', image: '' },
       { speaker: 'player', text: '[stressDialog]', image: '' },
       { speaker: 'mika', text: 'No time to hesitate, [player]. A Specter is breaching Neon City’s outer wall.', image: '' },
-      { speaker: 'System', text: 'Combat protocols engaged. Pilot [player], deploy Syncron Unit-01 against Specter.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'beginCombat' } }
+      { speaker: 'System', text: 'Combat protocols engaged. Pilot [player], deploy Syncron Unit-01 against Specter.', image: 'https://via.placeholder.com/100?text=NERV', action: { type: 'beginCombat' } },
+      { speaker: 'System', text: 'Specter neutralized. Sync rate stable. Pilot [player], mission complete.', image: 'https://via.placeholder.com/100?text=NERV' }
     ];
+
+    // Preload audio
+    function preloadAudio() {
+      [bgm, battleBgm, clickSound, pulseStrikeSound, neonBeamSound, atFieldSound, enemyAttackSound].forEach(audio => {
+        audio.load();
+        audio.onerror = () => console.warn(`Failed to load audio: ${audio.src}`);
+      });
+    }
+
+    // Play click sound
+    function playClickSound() {
+      clickSound.currentTime = 0;
+      clickSound.play().catch(err => console.warn('Click sound play failed:', err));
+    }
 
     // Show title screen
     function showTitleScreen() {
       game.innerHTML = `
         <div class="title-screen">
           <h1>Syncron Protocol</h1>
-          <button onclick="showDialogue()">Start</button>
+          <button onclick="playClickSound(); showDialogue()">Start</button>
         </div>
       `;
+      preloadAudio();
     }
 
     // Show dialogue or trigger action
     function showDialogue() {
+      if (dialogueIndex === 0) {
+        bgm.play().catch(err => console.warn('BGM play failed:', err));
+      }
       if (dialogueIndex < dialogues.length) {
         const { speaker, text, image, action } = dialogues[dialogueIndex];
         if (action) {
@@ -238,13 +313,13 @@
               <div class="portrait" style="background-image: url('${portraitImage}')"></div>
               <div class="dialogue-text">
                 <p><strong>${displaySpeaker}:</strong> ${displayText}</p>
-                <button onclick="dialogueIndex++; showDialogue()">Continue</button>
+                <button onclick="playClickSound(); dialogueIndex++; showDialogue()">Continue</button>
               </div>
             </div>
           `;
         }
       } else {
-        beginCombat();
+        endDemo();
       }
     }
 
@@ -256,7 +331,7 @@
           <div class="dialogue-text">
             <p><strong>System:</strong> Identify ${character === 'player' ? 'your codename' : character === 'mika' ? 'this tactician' : 'this engineer'} for NERV registry.</p>
             <input type="text" id="${character}Name" placeholder="Codename..." />
-            <button onclick="setName('${character}')">Confirm</button>
+            <button onclick="playClickSound(); setName('${character}')">Confirm</button>
           </div>
         </div>
       `;
@@ -296,7 +371,7 @@
             <div id="webcam-container">
               <video id="webcam" autoplay playsinline></video>
             </div>
-            <button onclick="startWebcam('${character}')">Start Webcam</button>
+            <button onclick="playClickSound(); startWebcam('${character}')">Start Webcam</button>
             <input type="file" id="imageUpload" accept="image/*" onchange="uploadImage('${character}')" />
           </div>
         </div>
@@ -326,8 +401,8 @@
                   <div id="webcam-container">
                     <video id="webcam" autoplay playsinline></video>
                   </div>
-                  <button onclick="takePhoto('${character}')">Capture Biometrics</button>
-                  <button onclick="stopWebcam()">Cancel</button>
+                  <button onclick="playClickSound(); takePhoto('${character}')">Capture Biometrics</button>
+                  <button onclick="playClickSound(); stopWebcam()">Cancel</button>
                 </div>
               </div>
             `;
@@ -338,7 +413,7 @@
         })
         .catch((err) => {
           console.error('Webcam error:', err);
-          alert('Error accessing webcam: ' + err.message + '. Ensure camera permissions are granted and use HTTPS. Alternatively, upload an image.');
+          alert('Error accessing webcam: ' + err.message + '. Ensure camera permissions are granted and use HTTPS or localhost. Alternatively, upload an image.');
         });
     }
 
@@ -444,8 +519,8 @@
           <div class="portrait" style="background-image: url('${image}')"></div>
           <div class="dialogue-text">
             <p><strong>System:</strong> Biometrics confirmed for ${name}. ${character === 'joren' ? 'NERV team synchronized.' : 'Proceed to next operative.'}</p>
-            <button onclick="dialogueIndex++; showDialogue()">${character === 'joren' ? 'Proceed' : 'Continue'}</button>
-            <button onclick="askPortrait('${character}')">Recapture Biometrics</button>
+            <button onclick="playClickSound(); dialogueIndex++; showDialogue()">${character === 'joren' ? 'Proceed' : 'Continue'}</button>
+            <button onclick="playClickSound(); askPortrait('${character}')">Recapture Biometrics</button>
           </div>
         </div>
       `;
@@ -516,63 +591,164 @@
 
     // Begin combat
     function beginCombat() {
+      combatState = { playerHP: 20, specterHP: 15, playerTurn: true, specterCharge: false };
+      bgm.pause();
+      battleBgm.currentTime = 0;
+      battleBgm.play().catch(err => console.warn('Battle BGM play failed:', err));
+      renderCombat();
+    }
+
+    // Render combat
+    function renderCombat() {
+      const status = `
+        <p><strong>Status:</strong> Pilot HP: ${combatState.playerHP} | Specter HP: ${combatState.specterHP} | Sync Stress: ${syncStress}</p>
+      `;
+      const menu = combatState.playerTurn ? `
+        <div class="combat-menu">
+          <button onclick="playClickSound(); selectCombatAction('attack')">Attack</button>
+          <button onclick="playClickSound(); selectCombatAction('skill')">Skill</button>
+          <button onclick="playClickSound(); selectCombatAction('defend')">Defend</button>
+        </div>
+      ` : '';
       game.innerHTML = `
         <div class="combat-box">
-          <p><strong>System:</strong> Specter detected, ${characterNames.player}! ${characterNames.mika} and ${characterNames.joren} monitoring. Sync Stress: ${syncStress}. Select action.</p>
-          <p><strong>Specter HP:</strong> <span id="specter-hp">15</span></p>
+          ${status}
           <div class="battlefield">
             <div class="character" style="background-image: url('${characterImages.player}')"></div>
             <div class="enemy" style="background-image: url('https://via.placeholder.com/100?text=Specter')"></div>
           </div>
-          <div>
-            <button onclick="attackSpecter('pulse')">Pulse Strike (5 DMG)</button>
-            <button onclick="attackSpecter('beam')">Neon Beam (3 DMG, fast)</button>
-            <button onclick="attackSpecter('barrier')">AT Field (Block 2 DMG)</button>
-          </div>
+          ${menu}
+          <div class="combat-log" id="combat-log"></div>
         </div>
       `;
     }
 
-    // Combat logic
-    function attackSpecter(type) {
-      const hpSpan = document.getElementById('specter-hp');
+    // Select combat action
+    function selectCombatAction(action) {
+      if (!combatState.playerTurn) return;
+      combatState.playerTurn = false;
+      if (action === 'skill') {
+        game.innerHTML = `
+          <div class="combat-box">
+            <p><strong>Status:</strong> Pilot HP: ${combatState.playerHP} | Specter HP: ${combatState.specterHP} | Sync Stress: ${syncStress}</p>
+            <div class="battlefield">
+              <div class="character" style="background-image: url('${characterImages.player}')"></div>
+              <div class="enemy" style="background-image: url('https://via.placeholder.com/100?text=Specter')"></div>
+            </div>
+            <div class="combat-menu">
+              <button onclick="playClickSound(); performCombatAction('pulse')">Pulse Strike</button>
+              <button onclick="playClickSound(); performCombatAction('beam')">Neon Beam</button>
+            </div>
+            <div class="combat-log" id="combat-log"></div>
+          </div>
+        `;
+      } else {
+        performCombatAction(action);
+      }
+    }
+
+    // Perform combat action
+    function performCombatAction(action) {
+      const log = document.getElementById('combat-log') || document.createElement('div');
       const character = document.querySelector('.character');
       const enemy = document.querySelector('.enemy');
+      let message = '';
       let damage = 0;
 
-      if (type === 'pulse') { damage = 5; syncStress += 5; }
-      if (type === 'beam') { damage = 3; syncStress += 5; }
-      if (type === 'barrier') {
+      if (action === 'attack') {
+        damage = 5;
+        syncStress += 5;
+        message = `Pilot ${characterNames.player} attacks! Specter takes ${damage} damage.`;
+        pulseStrikeSound.currentTime = 0;
+        pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
+      } else if (action === 'pulse') {
+        damage = 7;
+        syncStress += 7;
+        message = `Pulse Strike hits! Specter takes ${damage} damage.`;
+        pulseStrikeSound.currentTime = 0;
+        pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
+      } else if (action === 'beam') {
+        damage = 3;
+        syncStress += 7;
+        message = `Neon Beam strikes! Specter takes ${damage} damage.`;
+        neonBeamSound.currentTime = 0;
+        neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
+      } else if (action === 'defend') {
         syncStress += 2;
-        game.innerHTML += `<p><strong>System:</strong> AT Field deployed. Incoming damage mitigated. Stress: ${syncStress}</p>`;
-        return;
+        message = `Pilot ${characterNames.player} deploys AT Field! Incoming damage reduced.`;
+        atFieldSound.currentTime = 0;
+        atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
       }
 
       if (damage > 0) {
+        combatState.specterHP = Math.max(combatState.specterHP - damage, 0);
         character.classList.add('attack');
         enemy.classList.add('enemy-hit');
-
         setTimeout(() => {
           character.classList.remove('attack');
           enemy.classList.remove('enemy-hit');
-
-          let currentHP = parseInt(hpSpan.textContent);
-          let newHP = Math.max(currentHP - damage, 0);
-          hpSpan.textContent = newHP;
-
-          if (newHP <= 0) {
-            game.innerHTML = `
-              <div class="dialogue-box">
-                <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
-                <div class="dialogue-text">
-                  <p><strong>System:</strong> Specter neutralized. Sync rate stable. Pilot ${characterNames.player}, mission complete.</p>
-                  <button onclick="endDemo()">Continue</button>
-                </div>
-              </div>
-            `;
-          }
-        }, 600);
+        }, 300);
       }
+
+      log.innerHTML += `<p>${message}</p>`;
+      log.scrollTop = log.scrollHeight;
+
+      if (combatState.specterHP <= 0) {
+        battleBgm.pause();
+        bgm.play().catch(err => console.warn('BGM play failed:', err));
+        dialogueIndex++;
+        showDialogue();
+        return;
+      }
+
+      setTimeout(specterTurn, 1000);
+    }
+
+    // Specter turn
+    function specterTurn() {
+      const log = document.getElementById('combat-log');
+      const character = document.querySelector('.character');
+      const enemy = document.querySelector('.enemy');
+      let message = '';
+      let damage = combatState.specterCharge ? 5 : 3;
+
+      if (Math.random() < 0.3 && !combatState.specterCharge) {
+        combatState.specterCharge = true;
+        message = 'Specter is charging energy!';
+      } else {
+        if (combatState.specterCharge) combatState.specterCharge = false;
+        combatState.playerHP = Math.max(combatState.playerHP - damage, 0);
+        message = `Specter attacks! Pilot takes ${damage} damage.`;
+        enemy.classList.add('attack');
+        character.classList.add('enemy-hit');
+        setTimeout(() => {
+          enemy.classList.remove('attack');
+          character.classList.remove('enemy-hit');
+        }, 300);
+        enemyAttackSound.currentTime = 0;
+        enemyAttackSound.play().catch(err => console.warn('Enemy attack sound failed:', err));
+      }
+
+      log.innerHTML += `<p>${message}</p>`;
+      log.scrollTop = log.scrollHeight;
+
+      if (combatState.playerHP <= 0) {
+        battleBgm.pause();
+        bgm.play().catch(err => console.warn('BGM play failed:', err));
+        game.innerHTML = `
+          <div class="dialogue-box">
+            <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+            <div class="dialogue-text">
+              <p><strong>System:</strong> Pilot ${characterNames.player} incapacitated. Mission failed.</p>
+              <button onclick="playClickSound(); showTitleScreen()">Restart</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      combatState.playerTurn = true;
+      renderCombat();
     }
 
     // End demo
@@ -582,7 +758,7 @@
           <div class="portrait" style="background-image: url('${characterImages.mika}')"></div>
           <div class="dialogue-text">
             <p><strong>${characterNames.mika}:</strong> You did it, ${characterNames.player}. Despite everything, you pulled through.</p>
-            <button onclick="alert('End of demo. Thank you for playing!')">Close</button>
+            <button onclick="playClickSound(); alert('End of demo. Thank you for playing!')">Close</button>
           </div>
         </div>
       `;
