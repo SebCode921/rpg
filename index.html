@@ -93,6 +93,7 @@
       font-family: 'Eurostile', 'Arial', sans-serif;
       transition: background-color 0.2s;
       font-size: 14px;
+      touch-action: manipulation;
     }
     button:hover {
       background-color: #6b8cff;
@@ -233,6 +234,42 @@
     .enemy-hit {
       animation: hitAnim 0.3s;
     }
+    .premade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+      justify-items: center;
+    }
+    .premade-image {
+      width: 100px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #4a6bff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .premade-image:hover {
+      transform: scale(1.1);
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .control-button {
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     @keyframes attackAnim {
       0% { transform: translateX(0); }
       50% { transform: translateX(20px); }
@@ -284,6 +321,28 @@
       }
       .health-bar {
         width: 80px;
+      }
+      .premade-grid {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      }
+      .premade-image {
+        width: 80px;
+        height: 80px;
+      }
+      .grid {
+        grid-template-columns: repeat(5, 32px);
+      }
+      .cell {
+        width: 32px;
+        height: 32px;
+      }
+      .control-button {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+      }
+      .controls {
+        gap: 8px;
       }
     }
   </style>
@@ -343,6 +402,11 @@
       bossCharge: false,
       activeCharacter: 'player',
       bossType: 'specter'
+    };
+    const premadeImages = {
+      player: ['characters/player1.png', 'characters/player2.png'],
+      mika: ['characters/mika1.png', 'characters/mika2.png'],
+      joren: ['characters/joren1.png', 'characters/joren2.png']
     };
     const bgm = document.getElementById('bgm');
     const battleBgm = document.getElementById('battle-bgm');
@@ -462,7 +526,6 @@
           characterNames = gameState.characterNames;
           characterImages = gameState.characterImages;
           enemyImages = gameState.enemyImages || { specter: '', drone: '' };
-          // Reset invalid enemy images
           enemyImages.specter = (enemyImages.specter && typeof enemyImages.specter === 'string') ? enemyImages.specter : '';
           enemyImages.drone = (enemyImages.drone && typeof enemyImages.drone === 'string') ? enemyImages.drone : '';
           syncStress = gameState.syncStress;
@@ -687,9 +750,60 @@
             </div>
             <button onclick="playClickSound(); startWebcam('character', '${character}')">Start Webcam</button>
             <input type="file" id="imageUpload" accept="image/png,image/jpeg" onchange="uploadImage('character', '${character}')" />
+            <button onclick="playClickSound(); selectPremadeImage('${character}')">Use Premade Image</button>
           </div>
         </div>
       `;
+    }
+
+    // Select premade image
+    function selectPremadeImage(character) {
+      const images = premadeImages[character] || [];
+      if (images.length === 0) {
+        alert('No premade images available for this character.');
+        askPortrait(character);
+        return;
+      }
+      let imageGrid = '';
+      images.forEach((img, index) => {
+        imageGrid += `
+          <div class="premade-image" style="background-image: url('${img}')" onclick="playClickSound(); setPremadeImage('${character}', '${img}')"></div>
+        `;
+      });
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NERV')"></div>
+          <div class="dialogue-text">
+            <p><strong>System:</strong> Select a premade biometric profile for ${characterNames[character]}.</p>
+            <div class="premade-grid">${imageGrid}</div>
+            <button onclick="playClickSound(); askPortrait('${character}')">Back</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Set premade image
+    function setPremadeImage(character, imagePath) {
+      console.log(`Setting premade image for ${character}: ${imagePath}`);
+      characterImages[character] = imagePath;
+      if (character === 'player') {
+        dialogues[7].image = imagePath;
+        dialogues[12].image = imagePath;
+        dialogues[26].image = imagePath;
+        dialogues[33].image = imagePath;
+      } else if (character === 'mika') {
+        dialogues[17].image = imagePath;
+        dialogues[19].image = imagePath;
+        dialogues[27].image = imagePath;
+        dialogues[31].image = imagePath;
+        dialogues[35].image = imagePath;
+      } else if (character === 'joren') {
+        dialogues[23].image = imagePath;
+        dialogues[25].image = imagePath;
+        dialogues[32].image = imagePath;
+        dialogues[36].image = imagePath;
+      }
+      confirmPortrait(character);
     }
 
     // Ask for enemy portrait
@@ -912,15 +1026,27 @@
 
     // Start gameplay tutorial
     function startTutorial() {
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const controlPrompt = isTouchDevice ?
+        'Use the buttons below to move Unit-01 and align 3 sync nodes (red)' :
+        'Use WASD keys to move Unit-01 and align 3 sync nodes (red)';
       game.innerHTML = `
         <div class="tutorial-box">
-          <p><strong>System:</strong> Neural simulation active. Pilot ${characterNames.player}, use WASD to move Unit-01 and align 3 sync nodes (red). Stress: ${syncStress}</p>
+          <p><strong>System:</strong> Neural simulation active. Pilot ${characterNames.player}, ${controlPrompt}. Stress: ${syncStress}</p>
           <div class="grid" id="grid"></div>
           <p id="tutorial-message"></p>
+          <div class="controls" id="controls">
+            <button class="control-button" onclick="playClickSound(); movePlayer('up')">↑</button>
+            <button class="control-button" onclick="playClickSound(); movePlayer('down')">↓</button>
+            <button class="control-button" onclick="playClickSound(); movePlayer('left')">←</button>
+            <button class="control-button" onclick="playClickSound(); movePlayer('right')">→</button>
+          </div>
         </div>
       `;
       renderGrid();
-      document.addEventListener('keydown', handleTutorialInput);
+      if (!isTouchDevice) {
+        document.addEventListener('keydown', handleKeyboardInput);
+      }
     }
 
     // Render tutorial grid
@@ -946,15 +1072,27 @@
       message.textContent = `Nodes aligned: ${tutorialState.alignedCount}/3`;
     }
 
-    // Handle tutorial input
-    function handleTutorialInput(event) {
+    // Handle keyboard input for desktop
+    function handleKeyboardInput(event) {
+      let direction;
+      if (event.key === 'w') direction = 'up';
+      if (event.key === 's') direction = 'down';
+      if (event.key === 'a') direction = 'left';
+      if (event.key === 'd') direction = 'right';
+      if (direction) {
+        movePlayer(direction);
+      }
+    }
+
+    // Move player in tutorial
+    function movePlayer(direction) {
       const { x, y } = tutorialState.position;
       let newX = x;
       let newY = y;
-      if (event.key === 'w' && y > 0) newY--;
-      if (event.key === 's' && y < 4) newY++;
-      if (event.key === 'a' && x > 0) newX--;
-      if (event.key === 'd' && x < 4) newX++;
+      if (direction === 'up' && y > 0) newY--;
+      if (direction === 'down' && y < 4) newY++;
+      if (direction === 'left' && x > 0) newX--;
+      if (direction === 'right' && x < 4) newX++;
       if (newX !== x || newY !== y) {
         tutorialState.position = { x: newX, y: newY };
         const node = tutorialState.nodes.find(n => n.x === newX && n.y === newY && !n.aligned);
@@ -963,7 +1101,7 @@
           tutorialState.alignedCount++;
           syncStress += 10;
           if (tutorialState.alignedCount === 3) {
-            document.removeEventListener('keydown', handleTutorialInput);
+            document.removeEventListener('keydown', handleKeyboardInput);
             dialogueIndex++;
             showDialogue();
             return;
@@ -981,7 +1119,7 @@
         jorenHP: 15,
         bossHP: bossType === 'specter' ? 15 : 20,
         playerTurn: true,
-        bossCharge: false,
+        bossChe: false,
         activeCharacter: 'player',
         bossType: bossType
       };
@@ -1150,7 +1288,7 @@
           damage = 3;
           syncStress += 3;
           missChance = 0.1;
-          message = `${characterNames.joren} uses Neural Hack! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage, miss chance increased.`;
+          message = `${characterNames.joren} uses Neural Hack | ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage, miss chance increased.`;
           neonBeamSound.currentTime = 0;
           neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
         } else if (action === 'repair') {
