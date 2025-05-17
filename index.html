@@ -384,6 +384,7 @@
     let webcamStream = null;
     let dialogueIndex = 0;
     let syncStress = 0;
+    let money = 0;
     let tutorialState = {
       position: { x: 2, y: 2 },
       nodes: [
@@ -397,12 +398,37 @@
       playerHP: 20,
       mikaHP: 15,
       jorenHP: 15,
-      bossHP: 15,
+      bossHP: 25,
       playerTurn: true,
       bossCharge: false,
       activeCharacter: 'player',
       bossType: 'specter'
     };
+    let partyState = {
+      player: {
+        maxHp: 20,
+        attack: 5,
+        defense: 0,
+        weapon: null
+      },
+      mika: {
+        maxHp: 15,
+        attack: 4,
+        defense: 0,
+        weapon: null
+      },
+      joren: {
+        maxHp: 15,
+        attack: 3,
+        defense: 0,
+        weapon: null
+      }
+    };
+    const weapons = [
+      { name: 'Pulse Blade', attackBonus: 2, price: 100, for: 'player' },
+      { name: 'Tactical Rifle', attackBonus: 2, price: 100, for: 'mika' },
+      { name: 'Neural Disruptor', attackBonus: 2, price: 100, for: 'joren' }
+    ];
     const premadeImages = {
       player: ['characters/player1.png', 'characters/player2.png'],
       mika: ['characters/mika1.png', 'characters/mika2.png'],
@@ -477,7 +503,9 @@
           enemyImages,
           syncStress,
           tutorialState,
-          combatState
+          combatState,
+          partyState,
+          money
         };
         const stateString = JSON.stringify(gameState);
         if (stateString.length > 5 * 1024 * 1024) {
@@ -514,32 +542,25 @@
         if (
           typeof gameState.dialogueIndex === 'number' &&
           gameState.dialogueIndex >= 0 &&
-          gameState.dialogueIndex < dialogues.length &&
+          gameState.dialogueIndex <= dialogues.length &&
           typeof gameState.characterNames === 'object' &&
           typeof gameState.characterImages === 'object' &&
           typeof gameState.enemyImages === 'object' &&
           typeof gameState.syncStress === 'number' &&
           typeof gameState.tutorialState === 'object' &&
-          typeof gameState.combatState === 'object'
+          typeof gameState.combatState === 'object' &&
+          typeof gameState.partyState === 'object' &&
+          typeof gameState.money === 'number'
         ) {
           dialogueIndex = gameState.dialogueIndex;
           characterNames = gameState.characterNames;
           characterImages = gameState.characterImages;
           enemyImages = gameState.enemyImages || { specter: '', drone: '' };
-          enemyImages.specter = (enemyImages.specter && typeof enemyImages.specter === 'string') ? enemyImages.specter : '';
-          enemyImages.drone = (enemyImages.drone && typeof enemyImages.drone === 'string') ? enemyImages.drone : '';
           syncStress = gameState.syncStress;
           tutorialState = gameState.tutorialState;
-          combatState = {
-            playerHP: gameState.combatState.playerHP || 20,
-            mikaHP: gameState.combatState.mikaHP || 15,
-            jorenHP: gameState.combatState.jorenHP || 15,
-            bossHP: gameState.combatState.bossHP || 15,
-            playerTurn: gameState.combatState.playerTurn || true,
-            bossCharge: gameState.combatState.bossCharge || false,
-            activeCharacter: gameState.combatState.activeCharacter || 'player',
-            bossType: gameState.combatState.bossType || 'specter'
-          };
+          combatState = gameState.combatState;
+          partyState = gameState.partyState;
+          money = gameState.money;
           if (characterImages.player) {
             dialogues[7].image = characterImages.player;
             dialogues[12].image = characterImages.player;
@@ -565,7 +586,13 @@
           } else {
             bgm.play().catch(err => console.warn('BGM play failed:', err));
           }
-          showDialogue();
+          if (dialogueIndex < dialogues.length) {
+            showDialogue();
+          } else if (dialogueIndex === dialogues.length) {
+            showTown();
+          } else {
+            endDemo();
+          }
           return true;
         } else {
           alert('Invalid save data.');
@@ -595,6 +622,7 @@
       webcamStream = null;
       dialogueIndex = 0;
       syncStress = 0;
+      money = 0;
       tutorialState = {
         position: { x: 2, y: 2 },
         nodes: [
@@ -605,16 +633,20 @@
         alignedCount: 0
       };
       combatState = {
-        playerHP: 20,
-        mikaHP: 15,
-        jorenHP: 15,
-        bossHP: 15,
+        playerHP: partyState.player.maxHp,
+        mikaHP: partyState.mika.maxHp,
+        jorenHP: partyState.joren.maxHp,
+        bossHP: 25,
         playerTurn: true,
         bossCharge: false,
         activeCharacter: 'player',
         bossType: 'specter'
       };
-      localStorage.removeItem('syncronProtocolSave');
+      partyState = {
+        player: { maxHp: 20, attack: 5, defense: 0, weapon: null },
+        mika: { maxHp: 15, attack: 4, defense: 0, weapon: null },
+        joren: { maxHp: 15, attack: 3, defense: 0, weapon: null }
+      };
       playClickSound();
       showTitleScreen();
     }
@@ -690,6 +722,8 @@
           alert('An error occurred while displaying dialogue. Please try restarting the game.');
           restartGame();
         }
+      } else if (dialogueIndex === dialogues.length) {
+        showTown();
       } else {
         endDemo();
       }
@@ -1114,12 +1148,12 @@
     // Begin combat
     function beginCombat(bossType) {
       combatState = {
-        playerHP: 20,
-        mikaHP: 15,
-        jorenHP: 15,
-        bossHP: bossType === 'specter' ? 15 : 20,
+        playerHP: partyState.player.maxHp,
+        mikaHP: partyState.mika.maxHp,
+        jorenHP: partyState.joren.maxHp,
+        bossHP: bossType === 'specter' ? 25 : 30,
         playerTurn: true,
-        bossChe: false,
+        bossCharge: false,
         activeCharacter: 'player',
         bossType: bossType
       };
@@ -1131,26 +1165,24 @@
 
     // Render combat
     function renderCombat(skillMenu = false) {
-      const maxBossHP = combatState.bossType === 'specter' ? 15 : 20;
+      const maxBossHP = combatState.bossType === 'specter' ? 25 : 30;
       const bossHPPercent = (combatState.bossHP / maxBossHP) * 100;
       const bossHealthColor = bossHPPercent > 50 ? '#4aff6b' : bossHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
-      const playerHPPercent = (combatState.playerHP / 20) * 100;
+      const playerHPPercent = (combatState.playerHP / partyState.player.maxHp) * 100;
       const playerHealthColor = playerHPPercent > 50 ? '#4aff6b' : playerHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
-      const mikaHPPercent = (combatState.mikaHP / 15) * 100;
+      const mikaHPPercent = (combatState.mikaHP / partyState.mika.maxHp) * 100;
       const mikaHealthColor = mikaHPPercent > 50 ? '#4aff6b' : mikaHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
-      const jorenHPPercent = (combatState.jorenHP / 15) * 100;
+      const jorenHPPercent = (combatState.jorenHP / partyState.joren.maxHp) * 100;
       const jorenHealthColor = jorenHPPercent > 50 ? '#4aff6b' : jorenHPPercent > 25 ? '#ffeb3b' : '#ff4a6b';
       const status = `
         <div class="status">
-          <p><strong>Status:</strong> ${characterNames.player} HP: ${combatState.playerHP} | ${characterNames.mika} HP: ${combatState.mikaHP} | ${characterNames.joren} HP: ${combatState.jorenHP} | ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} HP: ${combatState.bossHP} | Sync Stress: ${syncStress}</p>
+          <p><strong>Status:</strong> ${characterNames.player} HP: ${combatState.playerHP} | ${characterNames.mika} HP: ${combatState.mikaHP} | ${characterNames.joren} HP: ${combatState.jorenHP} | ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} HP: ${combatState.bossHP} | Sync Stress: ${syncStress} | Money: ${money}</p>
         </div>
       `;
       let enemyImage = enemyImages[combatState.bossType];
       if (!enemyImage || typeof enemyImage !== 'string') {
         console.warn(`Invalid enemy image for ${combatState.bossType}, using placeholder.`);
         enemyImage = 'https://via.placeholder.com/100?text=' + (combatState.bossType === 'specter' ? 'Specter' : 'Specter+Drone');
-      } else {
-        console.log(`Using enemy image for ${combatState.bossType}: ${enemyImage.substring(0, 50)}...`);
       }
       const playerActions = skillMenu ? `
         <div class="action-buttons active">
@@ -1244,27 +1276,21 @@
       let boosted = false;
 
       if (combatState.activeCharacter === 'player') {
+        let baseDamage = 0;
         if (action === 'attack') {
-          damage = 5;
-          syncStress += 5;
-          message = `Pilot ${characterNames.player} attacks! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
-          pulseStrikeSound.currentTime = 0;
-          pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
+          baseDamage = 5;
         } else if (action === 'pulse') {
-          damage = 7;
-          syncStress += 7;
-          message = `Pulse Strike hits! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
+          baseDamage = 7;
+        } else if (action === 'beam') {
+          baseDamage = 3;
+        }
+        damage = baseDamage + (partyState.player.weapon ? partyState.player.weapon.attackBonus : 0);
+        syncStress += action === 'defend' ? 2 : 5;
+        message = action === 'defend' ? `Pilot ${characterNames.player} deploys AT Field! Incoming damage reduced.` : `Pilot ${characterNames.player} attacks! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
+        if (action !== 'defend') {
           pulseStrikeSound.currentTime = 0;
           pulseStrikeSound.play().catch(err => console.warn('Pulse strike sound failed:', err));
-        } else if (action === 'beam') {
-          damage = 3;
-          syncStress += 7;
-          message = `Neon Beam strikes! ${combatState.bossType === 'specter' ? 'Specter Drone' : 'Specter Drone'} takes ${damage} damage.`;
-          neonBeamSound.currentTime = 0;
-          neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
-        } else if (action === 'defend') {
-          syncStress += 2;
-          message = `Pilot ${characterNames.player} deploys AT Field! Incoming damage reduced.`;
+        } else {
           atFieldSound.currentTime = 0;
           atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
           defending = true;
@@ -1277,7 +1303,7 @@
           atFieldSound.play().catch(err => console.warn('AT field sound failed:', err));
           boosted = true;
         } else if (action === 'tactical') {
-          damage = 4;
+          damage = 4 + (partyState.mika.weapon ? partyState.mika.weapon.attackBonus : 0);
           syncStress += 4;
           message = `${characterNames.mika} lands a Tactical Strike! ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage.`;
           pulseStrikeSound.currentTime = 0;
@@ -1285,7 +1311,7 @@
         }
       } else if (combatState.activeCharacter === 'joren') {
         if (action === 'hack') {
-          damage = 3;
+          damage = 3 + (partyState.joren.weapon ? partyState.joren.weapon.attackBonus : 0);
           syncStress += 3;
           missChance = 0.1;
           message = `${characterNames.joren} uses Neural Hack | ${combatState.bossType === 'specter' ? 'Specter' : 'Specter Drone'} takes ${damage} damage, miss chance increased.`;
@@ -1293,9 +1319,9 @@
           neonBeamSound.play().catch(err => console.warn('Neon beam sound failed:', err));
         } else if (action === 'repair') {
           const target = combatState.playerHP < combatState.mikaHP ? (combatState.playerHP < combatState.jorenHP ? 'player' : 'joren') : (combatState.mikaHP < combatState.jorenHP ? 'mika' : 'joren');
-          if (target === 'player') combatState.playerHP = Math.min(combatState.playerHP + 5, 20);
-          else if (target === 'mika') combatState.mikaHP = Math.min(combatState.mikaHP + 5, 15);
-          else combatState.jorenHP = Math.min(combatState.jorenHP + 5, 15);
+          if (target === 'player') combatState.playerHP = Math.min(combatState.playerHP + 5, partyState.player.maxHp);
+          else if (target === 'mika') combatState.mikaHP = Math.min(combatState.mikaHP + 5, partyState.mika.maxHp);
+          else combatState.jorenHP = Math.min(combatState.jorenHP + 5, partyState.joren.maxHp);
           syncStress += 3;
           message = `${characterNames.joren} repairs ${characterNames[target]}! 5 HP restored.`;
           atFieldSound.currentTime = 0;
@@ -1317,15 +1343,13 @@
       log.scrollTop = log.scrollHeight;
 
       if (combatState.bossHP <= 0) {
+        money += combatState.bossType === 'specter' ? 100 : 150;
         stopAllAudio();
         bgm.play().catch(err => console.warn('BGM play failed:', err));
         dialogueIndex++;
         showDialogue();
         return;
       }
-
-      combatState.defending = combatState.activeCharacter === 'player' && action === 'defend' ? true : combatState.defending;
-      combatState.boosted = combatState.activeCharacter === 'mika' && action === 'boost' ? true : combatState.boosted;
 
       if (combatState.activeCharacter === 'player') {
         combatState.activeCharacter = 'mika';
@@ -1402,6 +1426,109 @@
       combatState.defending = false;
       combatState.boosted = false;
       renderCombat(false);
+    }
+
+    // Show town screen
+    function showTown() {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="dialogue-text">
+            <p><strong>System:</strong> Welcome to Neon City. Money: ${money}</p>
+            <button onclick="playClickSound(); showMedicalShop()">Visit Medical Shop</button>
+            <button onclick="playClickSound(); showWeaponsShop()">Visit Weapons Shop</button>
+            <button onclick="playClickSound(); talkToNPCs()">Talk to NPCs</button>
+            <button onclick="playClickSound(); showPartyStats()">View Party Stats</button>
+            <button onclick="playClickSound(); endDemo()">Continue</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Show medical shop
+    function showMedicalShop() {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="dialogue-text">
+            <p><strong>Medical Shop:</strong> Upgrade max HP for 100 money per member. Money: ${money}</p>
+            <button onclick="playClickSound(); upgradeMaxHp('player')">Upgrade ${characterNames.player} (Current max HP: ${partyState.player.maxHp})</button>
+            <button onclick="playClickSound(); upgradeMaxHp('mika')">Upgrade ${characterNames.mika} (Current max HP: ${partyState.mika.maxHp})</button>
+            <button onclick="playClickSound(); upgradeMaxHp('joren')">Upgrade ${characterNames.joren} (Current max HP: ${partyState.joren.maxHp})</button>
+            <button onclick="playClickSound(); showTown()">Back</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Upgrade max HP
+    function upgradeMaxHp(member) {
+      if (money >= 100) {
+        money -= 100;
+        partyState[member].maxHp += 5;
+        alert(`Upgraded ${characterNames[member]}'s max HP to ${partyState[member].maxHp}`);
+        showMedicalShop();
+      } else {
+        alert('Not enough money.');
+      }
+    }
+
+    // Show weapons shop
+    function showWeaponsShop() {
+      let weaponsList = '';
+      weapons.forEach(weapon => {
+        weaponsList += `<button onclick="playClickSound(); buyWeapon('${weapon.name}', ${weapon.price}, '${weapon.for}', ${weapon.attackBonus})">${weapon.name} for ${characterNames[weapon.for]} (+${weapon.attackBonus} ATK, ${weapon.price} money)</button>`;
+      });
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="dialogue-text">
+            <p><strong>Weapons Shop:</strong> Available weapons: Money: ${money}</p>
+            ${weaponsList}
+            <button onclick="playClickSound(); showTown()">Back</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Buy and equip weapon
+    function buyWeapon(name, price, forMember, attackBonus) {
+      if (money >= price) {
+        money -= price;
+        partyState[forMember].weapon = { name, attackBonus };
+        alert(`Equipped ${name} to ${characterNames[forMember]}`);
+        showWeaponsShop();
+      } else {
+        alert('Not enough money.');
+      }
+    }
+
+    // Talk to NPCs
+    function talkToNPCs() {
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="portrait" style="background-image: url('https://via.placeholder.com/100?text=NPC')"></div>
+          <div class="dialogue-text">
+            <p><strong>NPC:</strong> The Specters are getting stronger. Be careful out there.</p>
+            <button onclick="playClickSound(); showTown()">Back</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Show party stats
+    function showPartyStats() {
+      const playerWeapon = partyState.player.weapon ? partyState.player.weapon.name : 'None';
+      const mikaWeapon = partyState.mika.weapon ? partyState.mika.weapon.name : 'None';
+      const jorenWeapon = partyState.joren.weapon ? partyState.joren.weapon.name : 'None';
+      game.innerHTML = `
+        <div class="dialogue-box">
+          <div class="dialogue-text">
+            <p><strong>Party Stats:</strong> Money: ${money}</p>
+            <p>${characterNames.player}: Max HP: ${partyState.player.maxHp}, Attack: ${partyState.player.attack}, Weapon: ${playerWeapon}</p>
+            <p>${characterNames.mika}: Max HP: ${partyState.mika.maxHp}, Attack: ${partyState.mika.attack}, Weapon: ${mikaWeapon}</p>
+            <p>${characterNames.joren}: Max HP: ${partyState.joren.maxHp}, Attack: ${partyState.joren.attack}, Weapon: ${jorenWeapon}</p>
+            <button onclick="playClickSound(); showTown()">Back</button>
+          </div>
+        </div>
+      `;
     }
 
     // End demo
